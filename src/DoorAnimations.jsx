@@ -46,7 +46,7 @@ const _camPos = new THREE.Vector3()
 const DoorAnimations = () => {
   const { camera } = useThree()
   // useGLTF retrieves the cached instance loaded in SceneModels
-  const gltf = useGLTF('/src/assets/Doors_camera.glb')
+  const gltf = useGLTF('/Doors_camera.glb')
   const { actions } = useAnimations(gltf.animations, gltf.scene)
 
   // Track the open/close state of each door

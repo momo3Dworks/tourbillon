@@ -52,12 +52,12 @@ const SceneModels = ({
   tourbillonSystemRot = [0, 0, 0],
 }) => {
   // Load Models
-  const doorsCamera = useAdvancedGLTF('/src/assets/Doors_camera.glb')
-  const tunnelFloor = useAdvancedGLTF('/src/assets/Tunnel_Floor_Chains.glb')
-  const tunnelLights = useAdvancedGLTF('/src/assets/Tunnel_Lights.glb')
-  const crystals = useAdvancedGLTF('/src/assets/Crystals.glb')
-  const tourbillonDome = useAdvancedGLTF('/src/assets/TourbillonDome.glb')
-  const tourbillonSystem = useAdvancedGLTF('/src/assets/TourbillonMainSystem.glb')
+  const doorsCamera = useAdvancedGLTF('/Doors_camera.glb')
+  const tunnelFloor = useAdvancedGLTF('/Tunnel_Floor_Chains.glb')
+  const tunnelLights = useAdvancedGLTF('/Tunnel_Lights.glb')
+  const crystals = useAdvancedGLTF('/Crystals.glb')
+  const tourbillonDome = useAdvancedGLTF('/TourbillonDome.glb')
+  const tourbillonSystem = useAdvancedGLTF('/TourbillonMainSystem.glb')
 
   // Setup Animations
   const allAnimations = useMemo(() => {
