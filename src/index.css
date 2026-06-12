@@ -1,0 +1,35 @@
+@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500&display=swap');
+
+:root {
+  --font-primary: 'Outfit', sans-serif;
+  --font-mono: monospace;
+  --color-cyan: #00ffff;
+  --glass-blur: blur(10px);
+}
+
+body {
+  margin: 0;
+  padding: 0;
+  background-color: #000;
+  color: #fff;
+  font-family: var(--font-primary);
+  overflow: hidden;
+}
+
+#root {
+  width: 100vw;
+  height: 100vh;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+/* Scrollbar styling (optional, often hidden in R3F apps) */
+::-webkit-scrollbar {
+  display: none;
+}
+
+.perf-panel {
+  top: 5rem !important;
+}
