@@ -13,7 +13,7 @@ export const SCROLL_SENSITIVITY = 0.00002
 // FRICTION: how fast the camera decelerates after you stop scrolling.
 //   Closer to 0 → stops almost instantly
 //   Closer to 1 → very long glide (never stops)
-export const FRICTION = 0.08   // used as Math.pow(FRICTION, delta)
+export const FRICTION = 0.1   // used as Math.pow(FRICTION, delta)
 
 // ─────────────────────────────────────────────────────────────────────────────
 // WAYPOINT CONFIGURATION — add more entries here as needed
@@ -21,7 +21,7 @@ export const FRICTION = 0.08   // used as Math.pow(FRICTION, delta)
 // ─────────────────────────────────────────────────────────────────────────────
 export const WAYPOINTS = [
   {
-    position: [0, 90, 0],
+    position: [0, 100, 0],
     target: [0, 0, 0],
   },
   {
@@ -35,25 +35,34 @@ export const WAYPOINTS = [
   {
     position: [0, 15, 2],
     target: [0, -5, 0],
-  }, {
-    position: [3, 5, 8],
-    target: [0, -1, 0],
   },
+  {
+    position: [3, 6, 5],
+    target: [0, 0, 0],
+  },
+  {
+    position: [1, 3, 3],
+    target: [0, 0, 0],
+  },
+  {
+    position: [-8, 3, 3],
+    target: [0, 0, 0],
+  }
+
 ]
 
-// ─────────────────────────────────────────────────────────────────────────────
+export const scrollProgress = { current: -1.0 }
 
 const _pos = new THREE.Vector3()
 const _target = new THREE.Vector3()
-const _up = new THREE.Vector3(0, 1, 0)
 
 const lerp3 = (a, b, t) => new THREE.Vector3(...a).lerp(new THREE.Vector3(...b), t)
 
 const CameraRig = () => {
   const { camera, performance } = useThree()
 
-  // progress: 0.0 → WAYPOINTS.length - 1
-  const progress = useRef(0)
+  // progress: -1.0 (vault door closed) → 0.0 (vault door open, waypoint 0) → maxIdx
+  const progress = useRef(-1.0)
   const velocity = useRef(0)
 
   useEffect(() => {
@@ -118,28 +127,45 @@ const CameraRig = () => {
     // Integrate velocity into progress
     progress.current = THREE.MathUtils.clamp(
       progress.current + velocity.current,
-      0,
+      -1.0,
       maxIdx
     )
 
+    // Sync global scroll progress
+    scrollProgress.current = progress.current
+
+    if (velocity.current !== 0) {
+      console.log(`[CameraRig] progress: ${progress.current.toFixed(4)}, velocity: ${velocity.current.toFixed(6)}, cameraY: ${camera.position.y.toFixed(2)}`)
+    }
+
     // Clamp velocity at extremes so it doesn't keep building at boundaries
-    if (progress.current <= 0 || progress.current >= maxIdx) {
+    if (progress.current <= -1.0 || progress.current >= maxIdx) {
       velocity.current = 0
     }
 
-    // Determine which two waypoints we're interpolating between
-    const lower = Math.floor(progress.current)
-    const upper = Math.min(lower + 1, maxIdx)
-    const t = progress.current - lower   // local blend factor 0→1
+    // Interpolate camera position and target
+    let targetPos, targetLookAt
 
-    // Ease t with smoothstep for extra softness at endpoints
-    const et = t * t * (3 - 2 * t)
+    if (progress.current <= 0) {
+      // Camera stays stationary at waypoint 0 while the vault door is opening/closing
+      const wp = WAYPOINTS[0]
+      targetPos = new THREE.Vector3(...wp.position)
+      targetLookAt = new THREE.Vector3(...wp.target)
+    } else {
+      // Determine which two waypoints we're interpolating between
+      const lower = Math.floor(progress.current)
+      const upper = Math.min(lower + 1, maxIdx)
+      const t = progress.current - lower   // local blend factor 0→1
 
-    const wpA = WAYPOINTS[lower]
-    const wpB = WAYPOINTS[upper]
+      // Ease t with smoothstep for extra softness at endpoints
+      const et = t * t * (3 - 2 * t)
 
-    const targetPos = lerp3(wpA.position, wpB.position, et)
-    const targetLookAt = lerp3(wpA.target, wpB.target, et)
+      const wpA = WAYPOINTS[lower]
+      const wpB = WAYPOINTS[upper]
+
+      targetPos = lerp3(wpA.position, wpB.position, et)
+      targetLookAt = lerp3(wpA.target, wpB.target, et)
+    }
 
     // Smoothly lerp camera toward desired position (spring-like catch-up)
     const CATCH_UP = 1 - Math.pow(0.02, delta)   // ~98 % catch-up per second

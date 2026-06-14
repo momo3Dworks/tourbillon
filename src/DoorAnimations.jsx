@@ -1,6 +1,7 @@
 import { useEffect, useRef } from 'react'
 import { useFrame, useThree } from '@react-three/fiber'
-import { useGLTF, useAnimations } from '@react-three/drei'
+import { useAnimations } from '@react-three/drei'
+import { useAdvancedGLTF } from './SceneModels'
 import * as THREE from 'three'
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -39,14 +40,21 @@ export const DOOR_CONFIG = [
     actions: ['Door4_Left', 'Door4_Right'],
     color: '#0066ff', // Neon Blue
   },
+  {
+    label: 'Dome',
+    triggerY: 30.0, // Open when camera.y <= 30
+    actions: ['TourbillonDome'],
+    color: '#0066ff', // Neon Blue
+  },
 ]
 
 const _camPos = new THREE.Vector3()
 
 const DoorAnimations = () => {
   const { camera } = useThree()
-  // useGLTF retrieves the cached instance loaded in SceneModels
-  const gltf = useGLTF('/Doors_camera.glb')
+  // useAdvancedGLTF retrieves the cached instance loaded in SceneModels
+  const gltf = useAdvancedGLTF('/Doors_camera.glb')
+
   const { actions } = useAnimations(gltf.animations, gltf.scene)
 
   // Track the open/close state of each door
