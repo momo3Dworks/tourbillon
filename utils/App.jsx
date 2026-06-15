@@ -7,7 +7,7 @@ import { WebGPURenderer } from 'three/webgpu'
 import * as THREE from 'three'
 import Experience from './Experience'
 import Navbar from './components/Navbar'
-
+import { Perf } from 'r3f-webgpu-perf'
 import { useProgress } from '@react-three/drei'
 import gsap from 'gsap'
 import useAlquimiaStore from './store/useAlquimiaStore'
@@ -680,7 +680,7 @@ function MainApp() {
   const dpr = React.useMemo(() => {
     if (typeof window === 'undefined') return 1;
     const isMobile = window.innerWidth < 768 || /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
-    return isMobile ? Math.min(window.devicePixelRatio, 0.5) : Math.min(window.devicePixelRatio, 1);
+    return isMobile ? Math.min(window.devicePixelRatio, 0.75) : Math.min(window.devicePixelRatio, 1);
   }, [])
 
   return (
@@ -717,6 +717,7 @@ function MainApp() {
           return renderer
         }}
       >
+        <Perf position="top-left" />
         <PerspectiveCamera makeDefault position={[5, 5, 5]} />
 
         {ready && (

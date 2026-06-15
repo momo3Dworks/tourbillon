@@ -25,6 +25,7 @@ import { WebGPURenderer } from 'three/webgpu'
 import useAlquimiaStore from './store/useAlquimiaStore'
 import translations from './locales/translations.json'
 
+
 const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent)
 const mobileFactor = isMobile ? 0.65 : 1.0 // Factor de escala para calidad visual
 const RENDER_ALQUIMIA_ROOM = true
@@ -1092,7 +1093,7 @@ const Model = ({
             overlay.style.display = 'flex'
             overlay.style.alignItems = 'center'
             overlay.style.justifyContent = 'center'
-            
+
             const btn = document.createElement('button')
             btn.id = 'drunk-gpting-btn'
             btn.innerText = 'BACK TO ALQUIMIA'
@@ -1108,17 +1109,17 @@ const Model = ({
             btn.style.transition = 'all 0.3s'
             btn.onmouseenter = () => { btn.style.background = 'rgba(0, 255, 255, 0.1)'; btn.style.transform = 'scale(1.05)' }
             btn.onmouseleave = () => { btn.style.background = 'transparent'; btn.style.transform = 'scale(1)' }
-            
+
             btn.onclick = () => {
               overlay.style.opacity = '0'
               btn.style.opacity = '0'
               setTimeout(() => overlay.remove(), 800)
-              
+
               useAlquimiaStore.getState().setIsTimeAnomalyActive(false)
               useAlquimiaStore.getState().setIsAnimatingCinematic(false)
               useAlquimiaStore.getState().navigateToWaypoint(3)
             }
-            
+
             overlay.appendChild(btn)
             document.body.appendChild(overlay)
           }
@@ -2463,6 +2464,7 @@ const StructureCanvas = ({ isVisible, isMobile }) => {
         return renderer
       }}
     >
+
       <PerspectiveCamera makeDefault position={[0, 0, 9]} fov={isMobile ? 70 : 45} />
       <ambientLight intensity={0.5} />
       <directionalLight position={[10, 10, 5]} intensity={1.5} />
@@ -2623,7 +2625,7 @@ const Experience = () => {
       overlay.style.display = 'flex'
       overlay.style.alignItems = 'center'
       overlay.style.justifyContent = 'center'
-      
+
       const btn = document.createElement('button')
       btn.id = 'drunk-gpting-btn'
       btn.innerText = 'BACK TO ALQUIMIA'
@@ -2639,26 +2641,26 @@ const Experience = () => {
       btn.style.transition = 'all 0.3s'
       btn.onmouseenter = () => { btn.style.background = 'rgba(0, 255, 255, 0.1)'; btn.style.transform = 'scale(1.05)' }
       btn.onmouseleave = () => { btn.style.background = 'transparent'; btn.style.transform = 'scale(1)' }
-      
+
       btn.onclick = () => {
         overlay.style.opacity = '0'
         btn.style.opacity = '0'
         setTimeout(() => overlay.remove(), 600)
-        
+
         gsap.to(camera, {
           fov: isMobile ? 70 : 45,
           duration: 1.5,
           ease: 'power2.inOut',
           onUpdate: () => camera.updateProjectionMatrix()
         })
-        
+
         useAlquimiaStore.getState().setIsTimeAnomalyActive(false)
         useAlquimiaStore.getState().setIsAnimatingCinematic(false)
         isDrunkGptingRef.current = false
-        
+
         useAlquimiaStore.getState().navigateToWaypoint(3)
       }
-      
+
       overlay.appendChild(btn)
       document.body.appendChild(overlay)
     }
@@ -2691,7 +2693,7 @@ const Experience = () => {
         overlay.style.opacity = '1'
         const btn = document.getElementById('drunk-gpting-btn')
         if (btn) btn.style.opacity = '1'
-        
+
         setTimeout(() => {
           window.open('https://hotelherrera.com/drunk-gpting/', '_blank')
         }, 800)

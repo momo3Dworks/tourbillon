@@ -90,6 +90,24 @@ const useLevaControls = () => {
     envIntensity: { value: 0.6, min: 0, max: 5, step: 0.1, label: 'IBL Intensity' },
   })
 
+  // ── SSR (Screen Space Reflections) ─────────────────────────────
+  const ssrControls = useControls('SSR (Reflexiones)', {
+    ssrEnabled: { value: false, label: '✅ Activar SSR' },
+    ssrThickness: { value: 0.3, min: 0.001, max: 10.5, step: 0.001, label: 'Thickness' },
+    ssrMaxDistance: { value: 40, min: 0.5, max: 100, label: 'Distancia Máx.' },
+    ssrOpacity: { value: 1, min: 0, max: 1, label: 'Opacidad' },
+    ssrQuality: { value: 0.55, min: 0.1, max: 1, label: 'Calidad Raymarching' },
+    ssrBlurQuality: { value: 1, min: 1, max: 3, step: 1, label: 'Calidad Blur' },
+    ssrResolutionScale: { value: 0.5, min: 0.25, max: 1, label: 'Resolución SSR' },
+    'SSR Denoise': folder({
+      ssrDenoiseEnabled: { value: true, label: '✅ Denoise SSR' },
+      ssrDenoiseLuma: { value: 5, min: 0.1, max: 15, label: 'Luma Phi' },
+      ssrDenoiseDepth: { value: 5, min: 0.1, max: 15, label: 'Depth Phi' },
+      ssrDenoiseNormal: { value: 5, min: 0.1, max: 15, label: 'Normal Phi' },
+      ssrDenoiseRadius: { value: 4, min: 1, max: 15, label: 'Radio Denoise' },
+    })
+  })
+
   return {
     bloom: bloomControls,
     dof: dofControls,
@@ -107,6 +125,7 @@ const useLevaControls = () => {
     emissive: emissiveControls,
     env: envControls,
     transmission: transmissionControls,
+    ssr: ssrControls,
   }
 }
 

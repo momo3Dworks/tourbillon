@@ -26,11 +26,13 @@ function App() {
   }, [])
 
   // Max DPR configured separately for Desktop vs Mobile
-  const dpr = useMemo(() => {
-    if (typeof window === 'undefined') return 1;
-    const isMobile = window.innerWidth < 768 || /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
-    // Mobile capped at 0.75 for performance, desktop up to 0.95 for quality/perf balance
-    return isMobile ? Math.min(window.devicePixelRatio, 0.75) : Math.min(window.devicePixelRatio, 0.95);
+  const { isMobile, dpr } = useMemo(() => {
+    if (typeof window === 'undefined') return { isMobile: false, dpr: 1 }
+    const mobile = window.innerWidth < 768 || /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent)
+    return {
+      isMobile: mobile,
+      dpr: mobile ? Math.min(window.devicePixelRatio, 0.75) : Math.min(window.devicePixelRatio, 0.95)
+    }
   }, [])
 
   return (
@@ -46,11 +48,11 @@ function App() {
       <Canvas
         shadows
         dpr={dpr}
-        performance={{ min: 0.65, max: 0.95, debounce: 200 }}
+        performance={{ min: 0.75, max: 0.95, debounce: 200 }}
         frameloop={(ready && hasStarted) ? 'always' : 'never'}
       >
-        {/* Camera starts at waypoint 0 position */}
-        <PerspectiveCamera makeDefault position={WAYPOINTS[0].position} fov={60} near={0.1} far={1000} />
+        {/* Camera starts at waypoint 0 position. FOV 80 for mobile, 60 for desktop */}
+        <PerspectiveCamera makeDefault position={WAYPOINTS[0].position} fov={isMobile ? 80 : 60} near={0.1} far={1000} />
         <color attach="background" args={['#050510']} />
 
         {/* Scroll-driven smooth camera rig */}

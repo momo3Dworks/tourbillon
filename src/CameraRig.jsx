@@ -119,10 +119,7 @@ const CameraRig = () => {
     // Clamp tiny velocities to zero (prevents micro-drift)
     if (Math.abs(velocity.current) < 0.0001) velocity.current = 0
 
-    // Regress R3F performance dynamically on movement to trigger Adaptive DPR scaling
-    if (velocity.current !== 0) {
-      performance.regress()
-    }
+    // (Removed performance regression on movement)
 
     // Integrate velocity into progress
     progress.current = THREE.MathUtils.clamp(

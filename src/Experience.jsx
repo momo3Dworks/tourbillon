@@ -13,6 +13,7 @@ import { UnrealBloomPass } from 'three/addons/postprocessing/UnrealBloomPass.js'
 import { BokehPass } from 'three/addons/postprocessing/BokehPass.js'
 import { ShaderPass } from 'three/addons/postprocessing/ShaderPass.js'
 import { OutputPass } from 'three/addons/postprocessing/OutputPass.js'
+import { SSRPass } from 'three/addons/postprocessing/SSRPass.js'
 
 // Three.js shaders
 import { BrightnessContrastShader } from 'three/addons/shaders/BrightnessContrastShader.js'
@@ -80,7 +81,7 @@ const ChromaticAberrationShader = {
 //   RenderPass → UnrealBloom → BokehDoF → BrightnessContrast
 //   → ToneMapping → ChromaticAberration → Vignette → OutputPass
 // ─────────────────────────────────────────────────────────────────────────────
-const PostProcessing = ({ bloom, dof, color, vignette, ca }) => {
+const PostProcessing = ({ bloom, dof, color, vignette, ca, ssr }) => {
   const { gl, scene, camera, size } = useThree()
 
   // Build the full composer once per renderer/scene/camera
@@ -90,6 +91,22 @@ const PostProcessing = ({ bloom, dof, color, vignette, ca }) => {
     // 1. Scene render
     const renderPass = new RenderPass(scene, camera)
     comp.addPass(renderPass)
+
+    // 1.5 SSR Pass (Screen Space Reflections)
+    const selects = []
+    scene.traverse((c) => {
+      if (c.isMesh) selects.push(c)
+    })
+    const ssrPass = new SSRPass({
+      renderer: gl,
+      scene: scene,
+      camera: camera,
+      width: size.width,
+      height: size.height,
+      groundReflector: null,
+      selects: selects
+    })
+    comp.addPass(ssrPass)
 
     // 2. Unreal Bloom
     const bloomPass = new UnrealBloomPass(
@@ -137,14 +154,26 @@ const PostProcessing = ({ bloom, dof, color, vignette, ca }) => {
     const outputPass = new OutputPass()
     comp.addPass(outputPass)
 
-    return { comp, bloomPass, bokehPass, bcPass, tmPass, caPass, vigPass }
+    return { comp, renderPass, ssrPass, bloomPass, bokehPass, bcPass, tmPass, caPass, vigPass }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [gl, scene, camera])
+  }, [gl, camera])
 
   // Resize
   useEffect(() => {
     passes.comp.setSize(size.width, size.height)
-  }, [passes.comp, size])
+    if (passes.ssrPass) {
+      passes.ssrPass.setSize(size.width * ssr.ssrResolutionScale, size.height * ssr.ssrResolutionScale)
+    }
+  }, [passes.comp, passes.ssrPass, size, ssr.ssrResolutionScale])
+
+  // ── Sync SSR ────────────────────────────────────────────────
+  useEffect(() => {
+    if (!passes.ssrPass) return
+    passes.ssrPass.enabled = ssr.ssrEnabled
+    passes.ssrPass.thickness = ssr.ssrThickness
+    passes.ssrPass.maxDistance = ssr.ssrMaxDistance
+    passes.ssrPass.opacity = ssr.ssrOpacity
+  }, [passes.ssrPass, ssr.ssrEnabled, ssr.ssrThickness, ssr.ssrMaxDistance, ssr.ssrOpacity])
 
   // ── Sync Bloom ────────────────────────────────────────────────
   useEffect(() => {
@@ -316,7 +345,7 @@ const FadeIn = ({ delayMs = 1500 }) => {
 // ─────────────────────────────────────────────────────────────────────────────
 const Experience = () => {
   const controls = useLevaControls()
-  const { ambient, dirLight, shadow, env, bloom, dof, color, vignette, ca, transmission } = controls
+  const { ambient, dirLight, shadow, env, bloom, dof, color, vignette, ca, transmission, ssr } = controls
 
   return (
     <>
@@ -327,6 +356,7 @@ const Experience = () => {
         color={color}
         vignette={vignette}
         ca={ca}
+        ssr={ssr}
       />
 
       {/* Glass transmission on TourbillonGlass mesh */}
