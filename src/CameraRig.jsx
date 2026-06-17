@@ -21,7 +21,7 @@ export const FRICTION = 0.1   // used as Math.pow(FRICTION, delta)
 // ─────────────────────────────────────────────────────────────────────────────
 export const WAYPOINTS = [
   {
-    position: [0, 100, 0],
+    position: [0, 103, 0],
     target: [0, 0, 0],
   },
   {

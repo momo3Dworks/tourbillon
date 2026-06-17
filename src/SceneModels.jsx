@@ -66,6 +66,10 @@ const SceneModels = ({
 
   vaultDoorPos = [0, 3, 0],
   vaultDoorRot = [0, 0, 0],
+
+  TopGearsPos = [0, 3, 0],
+  TopGearsRot = [0, 0, 0],
+
   envMapIntensity = 1.0,
   emissiveIntensity = 10.0,
 }) => {
@@ -77,6 +81,7 @@ const SceneModels = ({
   const tourbillonDome = useAdvancedGLTF('/TourbillonDome.glb')
   const tourbillonSystem = useAdvancedGLTF('/TourbillonMainSystem.glb')
   const vaultDoor = useAdvancedGLTF('/VaultDoor.glb')
+  const TopGears = useAdvancedGLTF('/TopGears.glb')
 
   // Tunnel Lights Leva Controls
   const tunnelLightsConfig = useControls('Tunnel Lights', {
@@ -98,9 +103,10 @@ const SceneModels = ({
       ...tunnelLights.animations,
       ...crystals.animations,
       ...tourbillonDome.animations,
-      ...tourbillonSystem.animations
+      ...tourbillonSystem.animations,
+      ...TopGears.animations
     ]
-  }, [doorsCamera, tunnelFloor, tunnelLights, crystals, tourbillonDome, tourbillonSystem])
+  }, [doorsCamera, tunnelFloor, tunnelLights, crystals, tourbillonDome, tourbillonSystem, TopGears])
 
   const mainGroupRef = useRef()
   const { actions } = useAnimations(allAnimations, mainGroupRef)
@@ -113,6 +119,20 @@ const SceneModels = ({
       console.log('Available Actions:', animationActions)
 
       const gearsAction = actions['GEARS']
+      if (gearsAction) {
+        gearsAction.reset().setLoop(THREE.LoopRepeat, Infinity).play()
+      }
+    }
+  }, [actions])
+
+
+  useEffect(() => {
+    if (actions) {
+      animationActions.length = 0 // clear
+      Object.keys(actions).forEach(key => animationActions.push(key))
+      console.log('Available Actions:', animationActions)
+
+      const gearsAction = actions['TOPGEARS']
       if (gearsAction) {
         gearsAction.reset().setLoop(THREE.LoopRepeat, Infinity).play()
       }
@@ -150,6 +170,7 @@ const SceneModels = ({
       tourbillonDome.scene,
       tourbillonSystem.scene,
       vaultDoor.scene,
+      TopGears.scene,
     ]
     allScenes.forEach((scn) => {
       scn.traverse((child) => {
@@ -162,7 +183,7 @@ const SceneModels = ({
         }
       })
     })
-  }, [doorsCamera, tunnelFloor, tunnelLights, crystals, tourbillonDome, tourbillonSystem, vaultDoor])
+  }, [doorsCamera, tunnelFloor, tunnelLights, crystals, tourbillonDome, tourbillonSystem, vaultDoor, TopGears])
 
   // ── Aplicar materiales emissive para que el Bloom tenga objetivos ──────────
   // Los materiales emissive son lo que el BloomNode convierte en glow.
@@ -205,6 +226,7 @@ const SceneModels = ({
       tourbillonDome.scene,
       tourbillonSystem.scene,
       vaultDoor.scene,
+      TopGears.scene,
     ]
     otherScenes.forEach((scn) => {
       scn.traverse((child) => {
@@ -232,6 +254,7 @@ const SceneModels = ({
       tourbillonDome.scene,
       tourbillonSystem.scene,
       vaultDoor.scene,
+      TopGears.scene,
     ]
     allScenes.forEach((scn) => {
       scn.traverse((child) => {
@@ -246,7 +269,7 @@ const SceneModels = ({
         }
       })
     })
-  }, [doorsCamera, tunnelFloor, tunnelLights, crystals, tourbillonDome, tourbillonSystem, vaultDoor, envMapIntensity])
+  }, [doorsCamera, tunnelFloor, tunnelLights, crystals, tourbillonDome, tourbillonSystem, vaultDoor, TopGears, envMapIntensity])
 
   // Fix WebGPU Buffer Array Stride requirement (must be multiple of 4) BEFORE first render
   useMemo(() => {
@@ -280,7 +303,8 @@ const SceneModels = ({
     fixWebGPUBufferAlignment(tourbillonDome.scene)
     fixWebGPUBufferAlignment(tourbillonSystem.scene)
     fixWebGPUBufferAlignment(vaultDoor.scene)
-  }, [doorsCamera, tunnelFloor, tunnelLights, crystals, tourbillonDome, tourbillonSystem, vaultDoor])
+    fixWebGPUBufferAlignment(TopGears.scene)
+  }, [doorsCamera, tunnelFloor, tunnelLights, crystals, tourbillonDome, tourbillonSystem, vaultDoor, TopGears])
 
   // Rotate crystals and animate vault door based on scroll progress in useFrame
   useFrame((state, delta) => {
@@ -329,6 +353,7 @@ const SceneModels = ({
       <primitive object={tourbillonDome.scene} position={tourbillonDomePos} rotation={tourbillonDomeRot} />
       <primitive object={tourbillonSystem.scene} position={tourbillonSystemPos} rotation={tourbillonSystemRot} />
       <primitive object={vaultDoor.scene} position={vaultDoorPos} rotation={vaultDoorRot} />
+      <primitive object={TopGears.scene} position={TopGearsPos} rotation={TopGearsRot} />
     </group>
   )
 }
