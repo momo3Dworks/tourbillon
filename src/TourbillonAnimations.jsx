@@ -72,13 +72,13 @@ const TourbillonAnimations = () => {
 
   // ── Exploded-view interactive pieces — hover / spin / click ─────────────
   // AlquimiaCircleOuter group
-  const alquimiaColliderRef    = useRef(null)  // invisible sphere collider
-  const isHoveredAlquimia      = useRef(false)
-  const alquimiaSpinRef        = useRef({ x: 0, y: 0, z: 0 }) // accumulator
+  const alquimiaColliderRef = useRef(null)  // invisible sphere collider
+  const isHoveredAlquimia = useRef(false)
+  const alquimiaSpinRef = useRef({ x: 0, y: 0, z: 0 }) // accumulator
   // InnerRingEast
-  const innerRingColliderRef   = useRef(null)
-  const isHoveredInnerRing     = useRef(false)
-  const innerRingSpinRef       = useRef({ x: 0, y: 0, z: 0 })
+  const innerRingColliderRef = useRef(null)
+  const isHoveredInnerRing = useRef(false)
+  const innerRingSpinRef = useRef({ x: 0, y: 0, z: 0 })
 
   // ── Helper: toggle visibility of all non-exploded meshes across the entire scene ──
   const setNonExplodedMeshesVisible = useCallback((visible) => {
@@ -328,7 +328,7 @@ const TourbillonAnimations = () => {
       // Delay building colliders slightly so GSAP has moved pieces to final positions
       setTimeout(() => {
         buildCollider(pieces['AlquimiaCircleOuter'], alquimiaColliderRef, 0.9)
-        buildCollider(pieces['InnerRingEast'],       innerRingColliderRef, 0.85)
+        buildCollider(pieces['InnerRingEast'], innerRingColliderRef, 0.85)
       }, 2200)
 
     } else {
@@ -491,7 +491,7 @@ const TourbillonAnimations = () => {
 
         // ── AlquimiaCircleOuter group ──────────────────────────────────────────
         const alquimiaCollider = alquimiaColliderRef.current
-        const alquimiaMesh     = explodedPiecesRef.current['AlquimiaCircleOuter']
+        const alquimiaMesh = explodedPiecesRef.current['AlquimiaCircleOuter']
         if (alquimiaCollider) {
           const hit = _raycaster.intersectObject(alquimiaCollider, false).length > 0
 
@@ -507,7 +507,7 @@ const TourbillonAnimations = () => {
 
           // Continuous spin on all axes while hovered
           if (isHoveredAlquimia.current && alquimiaMesh) {
-            const speed = 0.6
+            const speed = 5.6
             // AlquimiaCircleOuter uses the overrideRot system to defeat AnimationMixer
             if (!alquimiaMesh.userData.overrideRot) {
               alquimiaMesh.userData.overrideRot = alquimiaMesh.rotation.clone()
@@ -531,7 +531,7 @@ const TourbillonAnimations = () => {
 
         // ── InnerRingEast ──────────────────────────────────────────────────────
         const innerCollider = innerRingColliderRef.current
-        const innerMesh     = explodedPiecesRef.current['InnerRingEast']
+        const innerMesh = explodedPiecesRef.current['InnerRingEast']
         if (innerCollider) {
           const hit = _raycaster.intersectObject(innerCollider, false).length > 0
 
@@ -547,8 +547,8 @@ const TourbillonAnimations = () => {
 
           // Continuous spin on its own axes while hovered
           if (isHoveredInnerRing.current && innerMesh) {
-            innerMesh.rotation.y += delta * 0.7
-            innerMesh.rotation.x += delta * 0.25
+            innerMesh.rotation.y += delta * 5.7
+            innerMesh.rotation.x += delta * 3.25
           }
         }
       }
