@@ -7,13 +7,53 @@ import Experience from './Experience'
 import CameraRig, { WAYPOINTS } from './CameraRig'
 import { Leva } from 'leva'
 
+import { useExploded } from './ExplodedContext'
+import ExplodedUI from './components/ExplodedUI'
+
 import './index.css'
+
+// ── ExplodedViewButton ────────────────────────────────────────────────────────
+// Rendered outside the Canvas so position:fixed is relative to the real viewport
+const ExplodedViewButton = () => {
+  const { isExploded, setExploded } = useExploded()
+  if (!isExploded) return null
+  return (
+    <button
+      onClick={() => setExploded(false)}
+      style={{
+        position: 'fixed',
+        bottom: '40px',
+        left: '50%',
+        transform: 'translateX(-50%)',
+        padding: '12px 32px',
+        background: 'rgba(5, 15, 20, 0.85)',
+        border: '1px solid #00ffff',
+        color: '#00ffff',
+        cursor: 'pointer',
+        zIndex: 1000,
+        boxShadow: '0 0 20px rgba(0, 255, 255, 0.45)',
+        fontFamily: 'sans-serif',
+        fontSize: '13px',
+        letterSpacing: '2px',
+        textTransform: 'uppercase',
+        backdropFilter: 'blur(6px)',
+        transition: 'box-shadow 0.3s ease',
+        pointerEvents: 'auto',
+      }}
+      onMouseEnter={e => { e.currentTarget.style.boxShadow = '0 0 35px rgba(0,255,255,0.75)' }}
+      onMouseLeave={e => { e.currentTarget.style.boxShadow = '0 0 20px rgba(0,255,255,0.45)' }}
+    >
+      ← Back to Tourbillon
+    </button>
+  )
+}
+
 
 function App() {
   const [ready, setReady] = useState(true)
   const [hasStarted, setHasStarted] = useState(false)
   // Press H to toggle Leva panel visibility
-  const [levaHidden, setLevaHidden] = useState(true)
+  const [levaHidden, setLevaHidden] = useState(false)
 
   useEffect(() => {
     const onKey = (e) => {
@@ -43,6 +83,10 @@ function App() {
       <Leva hidden={levaHidden} collapsed={false} />
       <Loader onStart={() => setHasStarted(true)} />
       <Navbar />
+      {/* DOM-level exploded view return button — position:fixed relative to real viewport */}
+      <ExplodedViewButton />
+      {/* Exploded View overlay: title, tooltip, science panel */}
+      <ExplodedUI />
 
       {/* R3F WebGL Canvas */}
       <Canvas

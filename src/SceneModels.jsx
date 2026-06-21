@@ -7,6 +7,18 @@ import * as THREE from 'three'
 import { scrollProgress } from './CameraRig'
 
 import { useControls } from 'leva'
+import { injectGridTransition } from './utils/GridTransition'
+import { useExploded } from './ExplodedContext'
+
+// Pieces that are exempt from GridTransition — must match TourbillonAnimations.jsx
+const EXPLODED_PIECE_NAMES = [
+  'InnerRingEast',
+  'InnerRingEast2',
+  'AlquimiaCircleOuter',
+  'AlquimiaTriangle',
+  'AlquimiaCircleInner',
+  'AlquimiaSquare',
+]
 
 let dracoLoaderInstance = null
 let ktx2LoaderInstance = null
@@ -38,6 +50,7 @@ export const useAdvancedGLTF = (url) => {
 
 // Global store/ref to keep track of animations
 export const animationActions = []
+export const globalActions = {}
 
 // Intensidad emissive global — ajustar para tuning del bloom
 const EMISSIVE_INTENSITY_LIGHTS = 4.0  // luces del túnel (warm white)
@@ -115,29 +128,25 @@ const SceneModels = ({
   useEffect(() => {
     if (actions) {
       animationActions.length = 0 // clear
-      Object.keys(actions).forEach(key => animationActions.push(key))
+      Object.keys(actions).forEach(key => {
+        animationActions.push(key)
+        globalActions[key] = actions[key]
+      })
       console.log('Available Actions:', animationActions)
 
       const gearsAction = actions['GEARS']
       if (gearsAction) {
         gearsAction.reset().setLoop(THREE.LoopRepeat, Infinity).play()
       }
-    }
-  }, [actions])
-
-
-  useEffect(() => {
-    if (actions) {
-      animationActions.length = 0 // clear
-      Object.keys(actions).forEach(key => animationActions.push(key))
-      console.log('Available Actions:', animationActions)
-
-      const gearsAction = actions['TOPGEARS']
-      if (gearsAction) {
-        gearsAction.reset().setLoop(THREE.LoopRepeat, Infinity).play()
+      
+      const topGearsAction = actions['TOPGEARS']
+      if (topGearsAction) {
+        topGearsAction.reset().setLoop(THREE.LoopRepeat, Infinity).play()
       }
     }
   }, [actions])
+
+  const { progressTunnelFloor, progressCrystals, progressDome, progressSystem } = useExploded()
 
   // Process Doors_camera to swap Y and Z
   const extractedCamera = useMemo(() => {
@@ -160,25 +169,105 @@ const SceneModels = ({
     return arr
   }, [crystals])
 
-  // ── Enable shadows (cast & receive) on all meshes ──────────────────────────
+  // ── Enable shadows + inject GridTransition per group ─────────────────────────
   useEffect(() => {
-    const allScenes = [
-      doorsCamera.scene,
-      tunnelFloor.scene,
-      tunnelLights.scene,
-      crystals.scene,
-      tourbillonDome.scene,
-      tourbillonSystem.scene,
-      vaultDoor.scene,
-      TopGears.scene,
+    // ── PASS 1: Clone materials for all exploded-piece meshes ─────────────────
+    // CRITICAL: GLB materials are shared objects. The material named "InnerRingEast"
+    // is reused by TourbillonNorthInner002_1 and TourbillonNorthInner_2 which DO get
+    // the GridTransition shader. Without cloning, the shader propagates to InnerRingEast
+    // via the shared material reference, making it dissolve despite the ancestor-walk guard.
+    // Cloning breaks the shared reference and marks the clone as permanently protected.
+    EXPLODED_PIECE_NAMES.forEach(pieceName => {
+      tourbillonSystem.scene.traverse((child) => {
+        if (!child.isMesh) return
+        // Walk up to check if this mesh is under an exploded piece node
+        let isUnder = false
+        let curr = child
+        while (curr) {
+          if (curr.name === pieceName) { isUnder = true; break }
+          curr = curr.parent
+        }
+        if (!isUnder) return
+
+        // Clone the material so it's no longer shared with non-exploded meshes
+        const mats = Array.isArray(child.material) ? child.material : [child.material]
+        const cloned = mats.map(mat => {
+          if (mat.userData.gridTransitionProtected) return mat // already cloned
+          const clone = mat.clone()
+          clone.userData = { ...mat.userData } // carry over existing userData
+          clone.userData.gridTransitionProtected = true  // permanent immunity flag
+          clone.userData.gridTransitionInjected  = true  // prevent injection later
+          return clone
+        })
+        child.material = Array.isArray(child.material) ? cloned : cloned[0]
+      })
+      // Also protect from tourbillonDome scene (InnerRingEast2 may live there)
+      tourbillonDome.scene.traverse((child) => {
+        if (!child.isMesh) return
+        let isUnder = false
+        let curr = child
+        while (curr) {
+          if (curr.name === pieceName) { isUnder = true; break }
+          curr = curr.parent
+        }
+        if (!isUnder) return
+        const mats = Array.isArray(child.material) ? child.material : [child.material]
+        const cloned = mats.map(mat => {
+          if (mat.userData.gridTransitionProtected) return mat
+          const clone = mat.clone()
+          clone.userData = { ...mat.userData }
+          clone.userData.gridTransitionProtected = true
+          clone.userData.gridTransitionInjected  = true
+          return clone
+        })
+        child.material = Array.isArray(child.material) ? cloned : cloned[0]
+      })
+    })
+
+    // ── PASS 2: Inject GridTransition shader on all non-protected meshes ───────
+    const SCENE_GROUPS = [
+      { scn: tunnelFloor.scene,      progressRef: progressTunnelFloor },
+      { scn: tunnelLights.scene,     progressRef: progressCrystals },
+      { scn: crystals.scene,         progressRef: progressCrystals },
+      { scn: doorsCamera.scene,      progressRef: progressCrystals },
+      { scn: vaultDoor.scene,        progressRef: progressCrystals },
+      { scn: TopGears.scene,         progressRef: progressCrystals },
+      { scn: tourbillonDome.scene,   progressRef: progressDome },
+      { scn: tourbillonSystem.scene, progressRef: progressSystem },
     ]
-    allScenes.forEach((scn) => {
+
+    SCENE_GROUPS.forEach(({ scn, progressRef }) => {
       scn.traverse((child) => {
         if (child.isMesh) {
           child.castShadow = true
           child.receiveShadow = true
+
           if (child.material) {
-            child.material.needsUpdate = true
+            // Skip glass transmission materials — their shader must not be modified
+            const isGlass = child.name === 'TourbillonGlass' ||
+                            child.name === 'TourbillonSouthOutter' ||
+                            child.name === 'TourbillonNorthOutter' ||
+                            (child.material && (
+                              child.material.name === 'TourbillonGlass' ||
+                              child.material.transmission > 0 ||
+                              (Array.isArray(child.material) && child.material.some(m => m.name === 'TourbillonGlass' || m.transmission > 0))
+                            ))
+            if (isGlass) return
+
+            const mats = Array.isArray(child.material) ? child.material : [child.material]
+            mats.forEach(mat => {
+              // gridTransitionInjected is set on protected (cloned) materials too,
+              // so this single guard prevents both double-injection and exploded-piece injection.
+              if (!mat.userData.gridTransitionInjected) {
+                mat.userData.originalTransparent = mat.transparent
+                mat.userData.groupProgressRef = progressRef
+                mat.onBeforeCompile = (shader) => {
+                  injectGridTransition(shader)
+                  mat.userData.shader = shader
+                }
+                mat.userData.gridTransitionInjected = true
+              }
+            })
           }
         }
       })
@@ -327,6 +416,37 @@ const SceneModels = ({
       const t = THREE.MathUtils.clamp(scrollProgress.current + 1.0, 0, 1)
       vaultAction.time = t * vaultAction.getClip().duration
     }
+
+    // 3. Update GridTransition shader uniforms per group
+    const SCENE_GROUPS_FRAME = [
+      tunnelFloor.scene,
+      tunnelLights.scene,
+      crystals.scene,
+      doorsCamera.scene,
+      vaultDoor.scene,
+      TopGears.scene,
+      tourbillonDome.scene,
+      tourbillonSystem.scene,
+    ]
+    SCENE_GROUPS_FRAME.forEach((scn) => {
+      scn.traverse((child) => {
+        if (child.isMesh && child.material) {
+          const mats = Array.isArray(child.material) ? child.material : [child.material]
+          mats.forEach((mat) => {
+            // gridTransitionProtected is set on cloned exploded-piece materials — never drive them
+            if (mat.userData.gridTransitionProtected) return
+            if (mat.userData.shader && mat.userData.shader.uniforms.uTransitionProgress) {
+              const ref = mat.userData.groupProgressRef
+              const progress = ref ? ref.current : 0.0
+              mat.userData.shader.uniforms.uTransitionProgress.value = progress
+              mat.transparent = progress > 0.001 || !!mat.userData.originalTransparent
+            }
+          })
+        }
+      })
+    })
+
+
   })
 
   return (

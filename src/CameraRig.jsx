@@ -56,10 +56,23 @@ export const scrollProgress = { current: -1.0 }
 const _pos = new THREE.Vector3()
 const _target = new THREE.Vector3()
 
+import { useExploded } from './ExplodedContext'
+import { useControls } from 'leva'
+
 const lerp3 = (a, b, t) => new THREE.Vector3(...a).lerp(new THREE.Vector3(...b), t)
 
 const CameraRig = () => {
   const { camera, performance } = useThree()
+  const { isExploded } = useExploded()
+
+  const explodedCam = useControls('Exploded View Camera', {
+    posX: { value: 0, min: -100, max: 100, step: 0.5, label: 'Position X' },
+    posY: { value: 5, min: -100, max: 100, step: 0.5, label: 'Position Y' },
+    posZ: { value: 10, min: -100, max: 100, step: 0.5, label: 'Position Z' },
+    targetX: { value: 0, min: -50, max: 50, step: 0.5, label: 'Target X' },
+    targetY: { value: 5, min: -50, max: 50, step: 0.5, label: 'Target Y' },
+    targetZ: { value: 0, min: -50, max: 50, step: 0.5, label: 'Target Z' },
+  })
 
   // progress: -1.0 (vault door closed) → 0.0 (vault door open, waypoint 0) → maxIdx
   const progress = useRef(-1.0)
@@ -162,6 +175,11 @@ const CameraRig = () => {
 
       targetPos = lerp3(wpA.position, wpB.position, et)
       targetLookAt = lerp3(wpA.target, wpB.target, et)
+    }
+
+    if (isExploded) {
+      targetPos = new THREE.Vector3(explodedCam.posX, explodedCam.posY, explodedCam.posZ)
+      targetLookAt = new THREE.Vector3(explodedCam.targetX, explodedCam.targetY, explodedCam.targetZ)
     }
 
     // Smoothly lerp camera toward desired position (spring-like catch-up)

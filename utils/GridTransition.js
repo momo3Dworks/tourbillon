@@ -49,6 +49,16 @@ export const applyGridTransition = (material, options = {}) => {
     baseOpacity.mul(maskResult)
   );
 
+  // Preserve transmission (Task 2)
+  if (material.transmission > 0 || material.transmissionNode) {
+    const baseTransmission = material.transmissionNode || TSL.float(material.transmission ?? 0.0);
+    material.transmissionNode = TSL.select(
+      progress.lessThan(0.01),
+      baseTransmission,
+      baseTransmission.mul(maskResult)
+    );
+  }
+
   // Only use alphaTest if the object is supposed to be fully opaque at start
   // or if we are deep into the transition.
   material.alphaTest = 0.1;

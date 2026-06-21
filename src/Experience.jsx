@@ -33,9 +33,9 @@ import * as THREE from 'three'
 const ChromaticAberrationShader = {
   name: 'ChromaticAberrationShader',
   uniforms: {
-    tDiffuse:   { value: null },
-    uAmount:    { value: 0.005 }, // max aberration magnitude in UV space
-    uFalloff:   { value: 2.0 },   // power: 1=linear, 2=quadratic, higher=edge-only
+    tDiffuse: { value: null },
+    uAmount: { value: 0.005 }, // max aberration magnitude in UV space
+    uFalloff: { value: 2.0 },   // power: 1=linear, 2=quadratic, higher=edge-only
   },
   vertexShader: /* glsl */`
     varying vec2 vUv;
@@ -119,9 +119,9 @@ const PostProcessing = ({ bloom, dof, color, vignette, ca, ssr }) => {
 
     // 3. Depth of Field (Bokeh)
     const bokehPass = new BokehPass(scene, camera, {
-      focus:    dof.focusDistance,
+      focus: dof.focusDistance,
       aperture: dof.focalLength * 0.00001,
-      maxblur:  dof.bokehScale * 0.01,
+      maxblur: dof.bokehScale * 0.01,
     })
     bokehPass.enabled = dof.enabled
     comp.addPass(bokehPass)
@@ -140,13 +140,13 @@ const PostProcessing = ({ bloom, dof, color, vignette, ca, ssr }) => {
 
     // 6. Chromatic Aberration (radial, center-zero falloff)
     const caPass = new ShaderPass(ChromaticAberrationShader)
-    caPass.uniforms.uAmount.value  = ca.enabled ? ca.amount : 0
+    caPass.uniforms.uAmount.value = ca.enabled ? ca.amount : 0
     caPass.uniforms.uFalloff.value = ca.falloff
     comp.addPass(caPass)
 
     // 7. Vignette
     const vigPass = new ShaderPass(VignetteShader)
-    vigPass.uniforms.offset.value   = vignette.offset
+    vigPass.uniforms.offset.value = vignette.offset
     vigPass.uniforms.darkness.value = vignette.enabled ? vignette.darkness : 0
     comp.addPass(vigPass)
 
@@ -177,23 +177,23 @@ const PostProcessing = ({ bloom, dof, color, vignette, ca, ssr }) => {
 
   // ── Sync Bloom ────────────────────────────────────────────────
   useEffect(() => {
-    passes.bloomPass.strength  = bloom.enabled ? bloom.strength : 0
-    passes.bloomPass.radius    = bloom.radius
+    passes.bloomPass.strength = bloom.enabled ? bloom.strength : 0
+    passes.bloomPass.radius = bloom.radius
     passes.bloomPass.threshold = bloom.threshold
   }, [passes.bloomPass, bloom.enabled, bloom.strength, bloom.radius, bloom.threshold])
 
   // ── Sync DoF ──────────────────────────────────────────────────
   useEffect(() => {
     passes.bokehPass.enabled = dof.enabled
-    passes.bokehPass.uniforms['focus'].value    = dof.focusDistance
+    passes.bokehPass.uniforms['focus'].value = dof.focusDistance
     passes.bokehPass.uniforms['aperture'].value = dof.focalLength * 0.00001
-    passes.bokehPass.uniforms['maxblur'].value  = dof.bokehScale * 0.01
+    passes.bokehPass.uniforms['maxblur'].value = dof.bokehScale * 0.01
   }, [passes.bokehPass, dof.enabled, dof.focusDistance, dof.focalLength, dof.bokehScale])
 
   // ── Sync Color Grading ────────────────────────────────────────
   useEffect(() => {
     passes.bcPass.uniforms.brightness.value = color.brightness
-    passes.bcPass.uniforms.contrast.value   = color.contrast
+    passes.bcPass.uniforms.contrast.value = color.contrast
   }, [passes.bcPass, color.brightness, color.contrast])
 
   useEffect(() => {
@@ -203,13 +203,13 @@ const PostProcessing = ({ bloom, dof, color, vignette, ca, ssr }) => {
 
   // ── Sync Chromatic Aberration ─────────────────────────────────
   useEffect(() => {
-    passes.caPass.uniforms.uAmount.value  = ca.enabled ? ca.amount : 0
+    passes.caPass.uniforms.uAmount.value = ca.enabled ? ca.amount : 0
     passes.caPass.uniforms.uFalloff.value = ca.falloff
   }, [passes.caPass, ca.enabled, ca.amount, ca.falloff])
 
   // ── Sync Vignette ─────────────────────────────────────────────
   useEffect(() => {
-    passes.vigPass.uniforms.offset.value   = vignette.offset
+    passes.vigPass.uniforms.offset.value = vignette.offset
     passes.vigPass.uniforms.darkness.value = vignette.enabled ? vignette.darkness : 0
   }, [passes.vigPass, vignette.enabled, vignette.offset, vignette.darkness])
 
@@ -231,6 +231,7 @@ const PostProcessing = ({ bloom, dof, color, vignette, ca, ssr }) => {
 // ─────────────────────────────────────────────────────────────────────────────
 const GlassTransmission = ({ config }) => {
   const gltf = useAdvancedGLTF('/TourbillonDome.glb')
+
   const matRef = useRef(null)
 
   // Create and apply the physical glass material once
@@ -253,7 +254,7 @@ const GlassTransmission = ({ config }) => {
         transmission: config.transmission,
         thickness: config.thickness,
         ior: config.ior,
-        roughness: config.roughness,
+        roughness: 0.0,
         metalness: 0.0,
         transparent: true,
         side: THREE.FrontSide,
@@ -261,6 +262,7 @@ const GlassTransmission = ({ config }) => {
         attenuationColor: new THREE.Color(config.color),
         attenuationDistance: 0.5,
       })
+      glassMat.name = 'TourbillonGlass'
 
       // Dispose old material if it's a clone
       if (child.material && child.material !== glassMat) {
@@ -286,9 +288,79 @@ const GlassTransmission = ({ config }) => {
 
     mat.visible = true
     mat.transmission = config.transmission
-    mat.thickness    = config.thickness
-    mat.ior          = config.ior
-    mat.roughness    = config.roughness
+    mat.thickness = config.thickness
+    mat.ior = config.ior
+    mat.roughness = config.roughness
+    mat.color.set(config.color)
+    mat.attenuationColor.set(config.color)
+    mat.needsUpdate = true
+  }, [config])
+
+  return null
+}
+
+const CaseTransmission = ({ config }) => {
+  const gltf = useAdvancedGLTF('/TourbillonMainSystem.glb')
+
+  const matRef = useRef(null)
+
+  // Create and apply the physical glass material once
+  useEffect(() => {
+    if (!gltf?.scene) return
+
+    gltf.scene.traverse((child) => {
+      if (!child.isMesh) return
+
+      // Match by material name or mesh name
+      const matName = Array.isArray(child.material)
+        ? child.material[0]?.name
+        : child.material?.name
+      const isGlass = matName === 'TourbillonGlass' || child.name === 'TourbillonSouthOutter' || child.name === 'TourbillonNorthOutter'
+      if (!isGlass) return
+
+      // Build a premium physical glass material
+      const glassMat = new THREE.MeshPhysicalMaterial({
+        color: config.color,
+        transmission: config.transmission,
+        thickness: config.thickness,
+        ior: config.ior,
+        roughness: 0.0,
+        metalness: 0.0,
+        transparent: true,
+        side: THREE.FrontSide,
+        // Slight tint for dispersion illusion via color
+        attenuationColor: new THREE.Color(config.color),
+        attenuationDistance: 0.5,
+      })
+      glassMat.name = 'TourbillonGlass'
+
+      // Dispose old material if it's a clone
+      if (child.material && child.material !== glassMat) {
+        child.material.dispose?.()
+      }
+
+      child.material = glassMat
+      matRef.current = glassMat
+      child.castShadow = false     // glass doesn't cast hard shadows
+      child.receiveShadow = true
+    })
+  }, [gltf])
+
+  // Live-update material properties from Leva without recreating
+  useEffect(() => {
+    const mat = matRef.current
+    if (!mat) return
+
+    if (!config.enabled) {
+      mat.visible = false
+      return
+    }
+
+    mat.visible = true
+    mat.transmission = config.transmission
+    mat.thickness = config.thickness
+    mat.ior = config.ior
+    mat.roughness = config.roughness
     mat.color.set(config.color)
     mat.attenuationColor.set(config.color)
     mat.needsUpdate = true
@@ -361,7 +433,7 @@ const Experience = () => {
 
       {/* Glass transmission on TourbillonGlass mesh */}
       <GlassTransmission config={transmission} />
-
+      <CaseTransmission config={transmission} />
       {/* Fade negro inicial al entrar */}
       <FadeIn delayMs={1500} />
 
