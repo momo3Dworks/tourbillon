@@ -51,21 +51,37 @@ const Tooltip = () => {
   )
 }
 
-// ─── Science / Information Panel ─────────────────────────────────────────────
-const SciencePanel = () => {
-  const { sciencePanelOpen, setSciencePanelOpen } = useExploded()
+// ─── Info Modal ──────────────────────────────────────────────────────────────
+const InfoModal = () => {
+  const { activeModal, setActiveModal } = useExploded()
   const [visible, setVisible] = useState(false)
 
   useEffect(() => {
-    if (sciencePanelOpen) {
+    if (activeModal) {
       // tiny delay so CSS transition fires
       requestAnimationFrame(() => setVisible(true))
     } else {
       setVisible(false)
     }
-  }, [sciencePanelOpen])
+  }, [activeModal])
 
-  if (!sciencePanelOpen) return null
+  if (!activeModal) return null
+
+  let titleTop = ''
+  let titleBottom = ''
+  if (activeModal === 'science') {
+    titleTop = 'The Science'
+    titleBottom = '/ Information'
+  } else if (activeModal === 'suites') {
+    titleTop = 'Book a Room'
+    titleBottom = ''
+  } else if (activeModal === 'adventures') {
+    titleTop = 'THEsuites'
+    titleBottom = ''
+  } else if (activeModal === 'events') {
+    titleTop = 'Events'
+    titleBottom = '/ General Info'
+  }
 
   return (
     // Backdrop
@@ -85,7 +101,7 @@ const SciencePanel = () => {
       onClick={(e) => {
         if (e.target === e.currentTarget) {
           e.stopPropagation()
-          setSciencePanelOpen(false)
+          setActiveModal(null)
         }
       }}
     >
@@ -144,7 +160,7 @@ const SciencePanel = () => {
           id="science-panel-close-x"
           onClick={(e) => {
             e.stopPropagation()
-            setSciencePanelOpen(false)
+            setActiveModal(null)
           }}
           style={{
             position: 'absolute',
@@ -202,16 +218,18 @@ const SciencePanel = () => {
             textAlign: 'center',
             textShadow: '0 0 30px rgba(0,255,255,0.4)',
           }}>
-            The Science
-            <span style={{
-              display: 'block',
-              fontSize: 'clamp(12px, 1.5vw, 16px)',
-              color: 'rgba(0,255,255,0.7)',
-              letterSpacing: '4px',
-              marginTop: '8px',
-            }}>
-              / Information
-            </span>
+            {titleTop}
+            {titleBottom && (
+              <span style={{
+                display: 'block',
+                fontSize: 'clamp(12px, 1.5vw, 16px)',
+                color: 'rgba(0,255,255,0.7)',
+                letterSpacing: '4px',
+                marginTop: '8px',
+              }}>
+                {titleBottom}
+              </span>
+            )}
           </h2>
 
           {/* Separator */}
@@ -241,7 +259,7 @@ const SciencePanel = () => {
           id="science-panel-close-btn"
           onClick={(e) => {
             e.stopPropagation()
-            setSciencePanelOpen(false)
+            setActiveModal(null)
           }}
           style={{
             marginTop: '32px',
@@ -317,14 +335,14 @@ const ExplodedUI = () => {
             fontWeight: 200,
             fontSize: 'clamp(22px, 3.5vw, 42px)',
             letterSpacing: '12px',
-            textTransform: 'uppercase',
+            fontWeight: '900',
             color: 'rgba(255,255,255,0.92)',
             margin: 0,
             textShadow: '0 0 40px rgba(0,255,255,0.3), 0 2px 24px rgba(0,0,0,0.8)',
             userSelect: 'none',
           }}
         >
-          The Store
+          {isExploded === 'east' ? 'THEapothecary' : (isExploded === 'north' ? 'THEhotel' : 'The Store')}
         </h1>
       </div>
 
@@ -332,7 +350,7 @@ const ExplodedUI = () => {
       <Tooltip />
 
       {/* ── Science / Info panel ──────────────────────────── */}
-      <SciencePanel />
+      <InfoModal />
 
       {/* ── Keyframe CSS ──────────────────────────────────── */}
       <style>{`

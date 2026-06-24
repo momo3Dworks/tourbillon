@@ -22,6 +22,8 @@ import { VignetteShader } from 'three/addons/shaders/VignetteShader.js'
 
 import useLevaControls from './LevaControls'
 import * as THREE from 'three'
+import { waypointCameraState } from './CameraRig'
+import { useExploded } from './ExplodedContext'
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Chromatic Aberration shader — radial falloff from viewport center.
@@ -83,6 +85,7 @@ const ChromaticAberrationShader = {
 // ─────────────────────────────────────────────────────────────────────────────
 const PostProcessing = ({ bloom, dof, color, vignette, ca, ssr }) => {
   const { gl, scene, camera, size } = useThree()
+  const { isExploded } = useExploded()
 
   // Build the full composer once per renderer/scene/camera
   const passes = useMemo(() => {
@@ -218,6 +221,28 @@ const PostProcessing = ({ bloom, dof, color, vignette, ca, ssr }) => {
     return () => { passes.comp.dispose() }
   }, [passes.comp])
 
+  // ── Sync Per-Waypoint DoF & FOV ───────────────────────────────
+  const wasEnabledRef = useRef(false)
+
+  useFrame(() => {
+    const isEnabled = waypointCameraState.perWaypointEnabled || !!isExploded
+    if (isEnabled) {
+      const { focusDistance, focalLength, bokehScale } = waypointCameraState
+      passes.bokehPass.uniforms['focus'].value = focusDistance
+      passes.bokehPass.uniforms['aperture'].value = focalLength * 0.00001
+      passes.bokehPass.uniforms['maxblur'].value = bokehScale * 0.01
+      passes.bokehPass.enabled = true
+      wasEnabledRef.current = true
+    } else if (wasEnabledRef.current) {
+      // Restore Leva controls values once when toggled off
+      passes.bokehPass.enabled = dof.enabled
+      passes.bokehPass.uniforms['focus'].value = dof.focusDistance
+      passes.bokehPass.uniforms['aperture'].value = dof.focalLength * 0.00001
+      passes.bokehPass.uniforms['maxblur'].value = dof.bokehScale * 0.01
+      wasEnabledRef.current = false
+    }
+  }, 0)
+
   // Take over render loop (priority 1)
   useFrame(() => { passes.comp.render() }, 1)
 
@@ -250,7 +275,7 @@ const GlassTransmission = ({ config }) => {
 
       // Build a premium physical glass material
       const glassMat = new THREE.MeshPhysicalMaterial({
-        color: config.color,
+        color: new THREE.Color(0xffffff),
         transmission: config.transmission,
         thickness: config.thickness,
         ior: config.ior,
@@ -259,7 +284,7 @@ const GlassTransmission = ({ config }) => {
         transparent: true,
         side: THREE.FrontSide,
         // Slight tint for dispersion illusion via color
-        attenuationColor: new THREE.Color(config.color),
+        attenuationColor: new THREE.Color(0xffffff),
         attenuationDistance: 0.5,
       })
       glassMat.name = 'TourbillonGlass'
@@ -320,7 +345,7 @@ const CaseTransmission = ({ config }) => {
 
       // Build a premium physical glass material
       const glassMat = new THREE.MeshPhysicalMaterial({
-        color: config.color,
+        color: new THREE.Color(0xffffff),
         transmission: config.transmission,
         thickness: config.thickness,
         ior: config.ior,
@@ -329,7 +354,7 @@ const CaseTransmission = ({ config }) => {
         transparent: true,
         side: THREE.FrontSide,
         // Slight tint for dispersion illusion via color
-        attenuationColor: new THREE.Color(config.color),
+        attenuationColor: new THREE.Color(0xffffff),
         attenuationDistance: 0.5,
       })
       glassMat.name = 'TourbillonGlass'

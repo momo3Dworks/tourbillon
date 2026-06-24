@@ -16,8 +16,8 @@ const useLevaControls = () => {
   // ── Depth of Field ─────────────────────────────────────────────
   const dofControls = useControls('Depth of Field', {
     enabled: { value: true, label: 'Enabled' },
-    focusDistance: { value: 4.5, min: 0.1, max: 200, step: 0.1, label: 'Focus Distance' },
-    focalLength: { value: 34.7, min: 0.1, max: 100, step: 0.1, label: 'Focal Length' },
+    focusDistance: { value: 3.8, min: 0.0001, max: 200, step: 0.1, label: 'Focus Distance' },
+    focalLength: { value: 60, min: 0.1, max: 100, step: 0.1, label: 'Focal Length' },
     bokehScale: { value: 1.7, min: 0, max: 15, step: 0.1, label: 'Bokeh Scale' },
   })
 
@@ -40,13 +40,13 @@ const useLevaControls = () => {
   const caControls = useControls('Chromatic Aberration', {
     enabled: { value: true, label: 'Enabled' },
     amount: { value: 0.01, min: 0, max: 0.05, step: 0.001, label: 'Max Amount' },
-    falloff: { value: 2.3, min: 0.5, max: 5.0, step: 0.1, label: 'Falloff Power' },
+    falloff: { value: 4.3, min: 0.5, max: 5.0, step: 0.1, label: 'Falloff Power' },
   })
 
   // ── Directional Light ──────────────────────────────────────────
   const dirLightControls = useControls('Directional Light', {
     enabled: { value: true, label: 'Enabled' },
-    intensity: { value: 10, min: 0, max: 10, step: 0.1, label: 'Intensity' },
+    intensity: { value: 8, min: 0, max: 50, step: 0.1, label: 'Intensity' },
     color: { value: '#ffeedd', label: 'Color' },
     position: folder({
       x: { value: 4, min: -100, max: 100, step: 0.5, label: 'X' },
@@ -82,7 +82,7 @@ const useLevaControls = () => {
     thickness: { value: 0.8, min: 0, max: 5, step: 0.05, label: 'Thickness' },
     dispersion: { value: 0.01, min: 0, max: 0.05, step: 0.001, label: 'Dispersion (CA)' },
     roughness: { value: 0.0, min: 0, max: 1, step: 0.01, label: 'Roughness' },
-    color: { value: '#ffe4c1', label: 'Tint' },
+    color: { value: '#ffffff', label: 'Tint' },
   })
 
   // ── Environment ────────────────────────────────────────────────

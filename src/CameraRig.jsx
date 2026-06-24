@@ -21,37 +21,62 @@ export const FRICTION = 0.1   // used as Math.pow(FRICTION, delta)
 // ─────────────────────────────────────────────────────────────────────────────
 export const WAYPOINTS = [
   {
-    position: [0, 103, 0],
+    position: [0, 100, 0],
     target: [0, 0, 0],
+    fov: 80,
+    dof: { focusDistance: 2.8, focalLength: 40, bokehScale: 10 },
   },
   {
     position: [0, 70, 1],
     target: [0, 0, 0],
+    fov: 60,
+    dof: { focusDistance: 6, focalLength: 23, bokehScale: 8 },
   },
   {
     position: [0, 50, 1],
     target: [0, 0, 0],
+    fov: 60,
+    dof: { focusDistance: 5, focalLength: 30, bokehScale: 7 },
   },
   {
-    position: [0, 15, 2],
+    position: [0, 10, 2],
     target: [0, -5, 0],
+    fov: 60,
+    dof: { focusDistance: 5, focalLength: 100, bokehScale: 8 },
   },
   {
-    position: [3, 6, 5],
-    target: [0, 0, 0],
+    position: [3, 6, 3],
+    target: [0, 2.3, 0],
+    fov: 60,
+    dof: { focusDistance: 2.5, focalLength: 50, bokehScale: 8 },
   },
   {
-    position: [1, 3, 3],
+    position: [1, 5, 3],
     target: [0, 0, 0],
+    fov: 60,
+    dof: { focusDistance: 0.1, focalLength: 60, bokehScale: 8 },
   },
   {
     position: [-8, 3, 3],
     target: [0, 0, 0],
-  }
+    fov: 98,
+    dof: { focusDistance: 5.0, focalLength: 55, bokehScale: 8 },
+  },
 
 ]
 
 export const scrollProgress = { current: -1.0 }
+
+// Shared mutable state updated every frame with interpolated per-waypoint camera values.
+// Read by PostProcessing in Experience.jsx to drive DoF uniforms per-frame.
+export const waypointCameraState = {
+  fov: 60,
+  focusDistance: 4.5,
+  focalLength: 34.7,
+  bokehScale: 1.7,
+  perWaypointEnabled: false,
+  hoveredObject: null,
+}
 
 const _pos = new THREE.Vector3()
 const _target = new THREE.Vector3()
@@ -62,7 +87,7 @@ import { useControls } from 'leva'
 const lerp3 = (a, b, t) => new THREE.Vector3(...a).lerp(new THREE.Vector3(...b), t)
 
 const CameraRig = () => {
-  const { camera, performance } = useThree()
+  const { camera, scene, performance } = useThree()
   const { isExploded } = useExploded()
 
   const explodedCam = useControls('Exploded View Camera', {
@@ -72,17 +97,35 @@ const CameraRig = () => {
     targetX: { value: 0, min: -50, max: 50, step: 0.5, label: 'Target X' },
     targetY: { value: 5, min: -50, max: 50, step: 0.5, label: 'Target Y' },
     targetZ: { value: 0, min: -50, max: 50, step: 0.5, label: 'Target Z' },
+    fov: { value: 60, min: 10, max: 120, step: 1, label: 'Default FOV' },
+    focusDistance: { value: 5.0, min: 0.1, max: 100, step: 0.1, label: 'Default Focus Distance' },
+    focalLength: { value: 50, min: 1, max: 150, step: 1, label: 'Default Focal Length' },
+    bokehScale: { value: 2.0, min: 0, max: 20, step: 0.1, label: 'Default Bokeh Scale' },
+    parallaxIntensity: { value: 0.6, min: 0, max: 5, step: 0.05, label: 'Mouse Parallax' },
   })
+
+  // Per-waypoint DoF & FOV toggle
+  const { perWaypointDof } = useControls('Waypoint Camera', {
+    perWaypointDof: { value: true, label: 'Per-Waypoint DoF & FOV' },
+  })
+  const perWaypointDofRef = useRef(false)
+  useEffect(() => {
+    perWaypointDofRef.current = perWaypointDof
+    waypointCameraState.perWaypointEnabled = perWaypointDof
+  }, [perWaypointDof])
 
   // progress: -1.0 (vault door closed) → 0.0 (vault door open, waypoint 0) → maxIdx
   const progress = useRef(-1.0)
   const velocity = useRef(0)
+  const currentLookAt = useRef(new THREE.Vector3(0, 0, 0))
+  const parallaxOffset = useRef(new THREE.Vector3(0, 0, 0))
 
   useEffect(() => {
     // Set camera to first waypoint immediately
     const wp = WAYPOINTS[0]
     camera.position.set(...wp.position)
     camera.lookAt(...wp.target)
+    currentLookAt.current.set(...wp.target)
   }, [camera])
 
   useEffect(() => {
@@ -122,7 +165,7 @@ const CameraRig = () => {
     }
   }, [])
 
-  useFrame((_, delta) => {
+  useFrame((state, delta) => {
     const maxIdx = WAYPOINTS.length - 1
 
     // Apply friction — frame-rate independent
@@ -155,12 +198,19 @@ const CameraRig = () => {
 
     // Interpolate camera position and target
     let targetPos, targetLookAt
+    let targetFov, targetFocusDist, targetFocalLen, targetBokeh
+
+    const DEFAULT_DOF = { focusDistance: 4.5, focalLength: 34.7, bokehScale: 1.7 }
 
     if (progress.current <= 0) {
-      // Camera stays stationary at waypoint 0 while the vault door is opening/closing
       const wp = WAYPOINTS[0]
       targetPos = new THREE.Vector3(...wp.position)
       targetLookAt = new THREE.Vector3(...wp.target)
+      const d = wp.dof || DEFAULT_DOF
+      targetFov = wp.fov ?? 60
+      targetFocusDist = d.focusDistance
+      targetFocalLen = d.focalLength
+      targetBokeh = d.bokehScale
     } else {
       // Determine which two waypoints we're interpolating between
       const lower = Math.floor(progress.current)
@@ -172,24 +222,64 @@ const CameraRig = () => {
 
       const wpA = WAYPOINTS[lower]
       const wpB = WAYPOINTS[upper]
+      const dA = wpA.dof || DEFAULT_DOF
+      const dB = wpB.dof || DEFAULT_DOF
 
       targetPos = lerp3(wpA.position, wpB.position, et)
       targetLookAt = lerp3(wpA.target, wpB.target, et)
+      targetFov = THREE.MathUtils.lerp(wpA.fov ?? 60, wpB.fov ?? 60, et)
+      targetFocusDist = THREE.MathUtils.lerp(dA.focusDistance, dB.focusDistance, et)
+      targetFocalLen = THREE.MathUtils.lerp(dA.focalLength, dB.focalLength, et)
+      targetBokeh = THREE.MathUtils.lerp(dA.bokehScale, dB.bokehScale, et)
     }
 
     if (isExploded) {
       targetPos = new THREE.Vector3(explodedCam.posX, explodedCam.posY, explodedCam.posZ)
       targetLookAt = new THREE.Vector3(explodedCam.targetX, explodedCam.targetY, explodedCam.targetZ)
+      targetFov = explodedCam.fov
+      targetFocusDist = explodedCam.focusDistance
+      targetFocalLen = explodedCam.focalLength
+      targetBokeh = explodedCam.bokehScale
+
+      // Apply mouse parallax in Exploded View
+      if (explodedCam.parallaxIntensity > 0) {
+        const right = new THREE.Vector3(1, 0, 0).applyQuaternion(camera.quaternion)
+        const up = new THREE.Vector3(0, 1, 0).applyQuaternion(camera.quaternion)
+
+        const targetParallax = new THREE.Vector3()
+          .addScaledVector(right, state.mouse.x * explodedCam.parallaxIntensity)
+          .addScaledVector(up, state.mouse.y * explodedCam.parallaxIntensity)
+
+        parallaxOffset.current.lerp(targetParallax, 1 - Math.pow(0.02, delta))
+        targetPos.add(parallaxOffset.current)
+      } else {
+        parallaxOffset.current.set(0, 0, 0)
+      }
+    } else {
+      parallaxOffset.current.set(0, 0, 0)
     }
 
-    // Smoothly lerp camera toward desired position (spring-like catch-up)
     const CATCH_UP = 1 - Math.pow(0.02, delta)   // ~98 % catch-up per second
+
+    // Smoothly lerp waypoint camera state values
+    waypointCameraState.fov = THREE.MathUtils.lerp(waypointCameraState.fov, targetFov, CATCH_UP)
+    waypointCameraState.focusDistance = THREE.MathUtils.lerp(waypointCameraState.focusDistance, targetFocusDist, CATCH_UP)
+    waypointCameraState.focalLength = THREE.MathUtils.lerp(waypointCameraState.focalLength, targetFocalLen, CATCH_UP)
+    waypointCameraState.bokehScale = THREE.MathUtils.lerp(waypointCameraState.bokehScale, targetBokeh, CATCH_UP)
+
+    // Smoothly lerp camera toward desired position
     _pos.copy(targetPos)
     camera.position.lerp(_pos, CATCH_UP)
 
-    // Look at target
-    _target.copy(targetLookAt)
-    camera.lookAt(_target)
+    // Apply FOV (smoothly lerped)
+    if (perWaypointDofRef.current || isExploded) {
+      camera.fov = waypointCameraState.fov
+      camera.updateProjectionMatrix()
+    }
+
+    // Look at target smoothly
+    currentLookAt.current.lerp(targetLookAt, CATCH_UP)
+    camera.lookAt(currentLookAt.current)
   })
 
   return null

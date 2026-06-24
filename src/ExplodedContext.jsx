@@ -4,7 +4,7 @@ const ExplodedContext = createContext(null);
 
 export const ExplodedProvider = ({ children }) => {
   const [isExploded, setExploded] = useState(false);
-  const [sciencePanelOpen, setSciencePanelOpen] = useState(false);
+  const [activeModal, setActiveModal] = useState(null);
   // tooltip: null | { text: string }
   const [tooltip, setTooltip] = useState(null);
 
@@ -23,8 +23,8 @@ export const ExplodedProvider = ({ children }) => {
     <ExplodedContext.Provider value={{
       isExploded,
       setExploded,
-      sciencePanelOpen,
-      setSciencePanelOpen,
+      activeModal,
+      setActiveModal,
       tooltip,
       setTooltip,
       transitionProgress,       // legacy — kept for compat

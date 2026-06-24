@@ -18,6 +18,25 @@ const EXPLODED_PIECE_NAMES = [
   'AlquimiaTriangle',
   'AlquimiaCircleInner',
   'AlquimiaSquare',
+  'AlquimiaTourbillonDome',
+  'TourbillonNorthOutter',
+  'TourbillonNorthInner',
+  'TourbillonNorthInnerG4',
+  'TourbillonNorthInnerG2',
+  'TourbillonNorthInnerG3',
+  'TourbillonSouthOutter',
+  'TourbillonSouthInner',
+  'TourbillonSouthInnerG4',
+  'TourbillonSouthInnerG2',
+  'TourbillonSouthInnerG3',
+  'TourbillonSouthBolt1',
+  'TourbillonSouthBolt2',
+  'TourbillonSouthBolt3',
+  'TourbillonSouthCenter',
+  'TourbillonNorthBolt1',
+  'TourbillonNorthBolt2',
+  'TourbillonNorthBolt3',
+  'TourbillonNorthCenter',
 ]
 
 let dracoLoaderInstance = null
@@ -122,29 +141,115 @@ const SceneModels = ({
   }, [doorsCamera, tunnelFloor, tunnelLights, crystals, tourbillonDome, tourbillonSystem, TopGears])
 
   const mainGroupRef = useRef()
-  const { actions } = useAnimations(allAnimations, mainGroupRef)
+  const { actions, mixer } = useAnimations(allAnimations, mainGroupRef)
 
   // Expose actions to the global array and play GEARS action in loop
   useEffect(() => {
-    if (actions) {
-      animationActions.length = 0 // clear
-      Object.keys(actions).forEach(key => {
-        animationActions.push(key)
-        globalActions[key] = actions[key]
-      })
-      console.log('Available Actions:', animationActions)
+    if (!actions || !mixer) return
 
-      const gearsAction = actions['GEARS']
-      if (gearsAction) {
-        gearsAction.reset().setLoop(THREE.LoopRepeat, Infinity).play()
-      }
-      
-      const topGearsAction = actions['TOPGEARS']
-      if (topGearsAction) {
-        topGearsAction.reset().setLoop(THREE.LoopRepeat, Infinity).play()
-      }
+    // ── Exact frame counts from Blender (24 fps) ─────────────────────────────
+    const BLENDER_FPS = 60
+    const GEARS_FRAMES = {
+      CenterPivotRotation: 1485,
+      PinNorth: 350,
+      TourbillonNorthInnerG4: 476,
+      TourbillonNorthInnerG3: 363,
+      TourbillonNorthInnerG2: 363,
+      TourbillonNorthInner: 363,
+      TourbillonNorthSpiral: 7,
+      TourbillonNorthCycles: 7,
+      NorthSpiralGadget: 7,
+      PinEast: 350,
+      InnerRingEast2: 360,
+      AlquimiaCircleOuter: 232,
+      TourbillonSouthInnerG1: 475,
+      TourbillonSouthInnerG2: 475,
+      TourbillonSouthInnerG3: 475,
+      TourbillonSouthInner: 475,
+      TourbillonSouthSpiral: 10,
+      TourbillonSouthCycles: 7,
+      SouthSpiralGadget: 7,
+      Element03: 179,
+      Element02: 579,
+      Element01: 771,
+      AlquimiaTriangle: 162,
+      AlquimiaCircleInner: 95,
+      AlquimiaSquare: 59,
+      PinWest: 350,
+      G3_2: 350,
+      G3: 202,
+      G1_1: 240,
+      G1_2: 240,
+      G5_2: 227,
+      Gear_1: 240,
+      G4: 243,
+      G1: 202,
+      G5: 202,
+      TourbillonWestWeigth: 628,
+      PinSouth: 840,
     }
-  }, [actions])
+
+    // Expose all original actions to the global registry
+    animationActions.length = 0
+    Object.keys(actions).forEach(key => {
+      animationActions.push(key)
+      globalActions[key] = actions[key]
+    })
+
+    // ── Split a multi-track AnimationClip into per-track clips with exact durations
+    const splitAndPlayAction = (actionName) => {
+      const clip = allAnimations.find(a => a.name === actionName)
+      if (!clip) return
+
+      // Stop the bundled action so it doesn't fight our split ones
+      if (actions[actionName]) actions[actionName].stop()
+
+      const splitActionList = []
+
+      clip.tracks.forEach((track) => {
+        // Track names are like "ObjectName.quaternion" or "ObjectName.position"
+        const objectName = track.name.split('.')[0]
+
+        // Look up exact duration from Blender frame data; fall back to last keyframe time
+        const frames = GEARS_FRAMES[objectName]
+        const duration = frames != null
+          ? frames / BLENDER_FPS
+          : track.times[track.times.length - 1]
+
+        // Trim track times to [0, duration] to avoid any sub-frame overrun
+        const trimmedTimes = new Float32Array(track.times.map(t => Math.min(t, duration)))
+        const trimmedTrack = track.clone()
+        trimmedTrack.times = trimmedTimes
+
+        const singleClip = new THREE.AnimationClip(
+          `${actionName}__${objectName}__${track.name}`,
+          duration,
+          [trimmedTrack]
+        )
+        const action = mixer.clipAction(singleClip)
+        action.clampWhenFinished = false
+        action.reset().setLoop(THREE.LoopRepeat, Infinity).play()
+        splitActionList.push(action)
+      })
+
+      // ── GSAP-friendly proxy: animating timeScale on it propagates to all split actions
+      const proxy = {
+        get timeScale() {
+          return splitActionList[0]?.timeScale ?? 1
+        },
+        set timeScale(v) {
+          splitActionList.forEach(a => { a.timeScale = v })
+        },
+      }
+      globalActions[actionName] = proxy
+    }
+
+    splitAndPlayAction('GEARS')
+    splitAndPlayAction('TOPGEARS')
+
+    console.log('Available Actions:', animationActions)
+
+  }, [actions, allAnimations, mixer])
 
   const { progressTunnelFloor, progressCrystals, progressDome, progressSystem } = useExploded()
 
@@ -184,6 +289,10 @@ const SceneModels = ({
         let isUnder = false
         let curr = child
         while (curr) {
+          if (['G1002'].includes(curr.name)) {
+            isUnder = false
+            break
+          }
           if (curr.name === pieceName) { isUnder = true; break }
           curr = curr.parent
         }
@@ -196,7 +305,7 @@ const SceneModels = ({
           const clone = mat.clone()
           clone.userData = { ...mat.userData } // carry over existing userData
           clone.userData.gridTransitionProtected = true  // permanent immunity flag
-          clone.userData.gridTransitionInjected  = true  // prevent injection later
+          clone.userData.gridTransitionInjected = true  // prevent injection later
           return clone
         })
         child.material = Array.isArray(child.material) ? cloned : cloned[0]
@@ -217,7 +326,7 @@ const SceneModels = ({
           const clone = mat.clone()
           clone.userData = { ...mat.userData }
           clone.userData.gridTransitionProtected = true
-          clone.userData.gridTransitionInjected  = true
+          clone.userData.gridTransitionInjected = true
           return clone
         })
         child.material = Array.isArray(child.material) ? cloned : cloned[0]
@@ -226,13 +335,13 @@ const SceneModels = ({
 
     // ── PASS 2: Inject GridTransition shader on all non-protected meshes ───────
     const SCENE_GROUPS = [
-      { scn: tunnelFloor.scene,      progressRef: progressTunnelFloor },
-      { scn: tunnelLights.scene,     progressRef: progressCrystals },
-      { scn: crystals.scene,         progressRef: progressCrystals },
-      { scn: doorsCamera.scene,      progressRef: progressCrystals },
-      { scn: vaultDoor.scene,        progressRef: progressCrystals },
-      { scn: TopGears.scene,         progressRef: progressCrystals },
-      { scn: tourbillonDome.scene,   progressRef: progressDome },
+      { scn: tunnelFloor.scene, progressRef: progressTunnelFloor },
+      { scn: tunnelLights.scene, progressRef: progressCrystals },
+      { scn: crystals.scene, progressRef: progressCrystals },
+      { scn: doorsCamera.scene, progressRef: progressCrystals },
+      { scn: vaultDoor.scene, progressRef: progressCrystals },
+      { scn: TopGears.scene, progressRef: progressCrystals },
+      { scn: tourbillonDome.scene, progressRef: progressDome },
       { scn: tourbillonSystem.scene, progressRef: progressSystem },
     ]
 
@@ -245,13 +354,13 @@ const SceneModels = ({
           if (child.material) {
             // Skip glass transmission materials — their shader must not be modified
             const isGlass = child.name === 'TourbillonGlass' ||
-                            child.name === 'TourbillonSouthOutter' ||
-                            child.name === 'TourbillonNorthOutter' ||
-                            (child.material && (
-                              child.material.name === 'TourbillonGlass' ||
-                              child.material.transmission > 0 ||
-                              (Array.isArray(child.material) && child.material.some(m => m.name === 'TourbillonGlass' || m.transmission > 0))
-                            ))
+              child.name === 'TourbillonSouthOutter' ||
+              child.name === 'TourbillonNorthOutter' ||
+              (child.material && (
+                child.material.name === 'TourbillonGlass' ||
+                child.material.transmission > 0 ||
+                (Array.isArray(child.material) && child.material.some(m => m.name === 'TourbillonGlass' || m.transmission > 0))
+              ))
             if (isGlass) return
 
             const mats = Array.isArray(child.material) ? child.material : [child.material]
