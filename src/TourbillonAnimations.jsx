@@ -6,8 +6,16 @@ import * as THREE from 'three'
 import gsap from 'gsap'
 import { useExploded } from './ExplodedContext'
 import { waypointCameraState } from './CameraRig'
+import { applyChunkExplosion } from './utils/ChunkExplode'
 
 const _camPos = new THREE.Vector3()
+
+// ─── Meshes to apply procedural dynamic chunk explosion ──────────────────────
+const CHUNK_EXPLODE_TARGETS = [
+  // Add exact mesh names here, e.g. 'Tourbillon_Base'
+  'TourbillonNorthOutter',
+  'TourbillonSouthOutter'
+]
 
 // ─── Pieces that stay visible during Exploded View (East) ────────────────────
 const EXPLODE_EAST_PIECE_NAMES = [
@@ -105,6 +113,8 @@ const TourbillonAnimations = () => {
     progressDome,
     progressSystem,
     setTooltip,
+    activeSection, setActiveSection,
+    hoverTitle, setHoverTitle,
   } = useExploded()
 
   // Retrieve the cached gltfs
@@ -126,6 +136,10 @@ const TourbillonAnimations = () => {
   // Refs for hover / collider on TourbillonSouth (unexploded)
   const southColliderRef = useRef(null)
   const isHoveredSouth = useRef(false)
+
+  // Refs for hover / collider on TourbillonWest (unexploded)
+  const westColliderRef = useRef(null)
+  const isHoveredWest = useRef(false)
 
   // Refs for exploded pieces
   const domeRef = useRef(null)
@@ -265,10 +279,9 @@ const TourbillonAnimations = () => {
         northColliderRef.current = collider
       }
 
-      // TourbillonSouth collider — no electric shader
+      // TourbillonSouth collider
       if (child.name === 'TourbillonSouth' && !child.userData.colliderCreated) {
         child.userData.colliderCreated = true
-
         child.geometry.computeBoundingSphere()
         const sphereGeom = new THREE.SphereGeometry(
           child.geometry.boundingSphere.radius * 1.4, 12, 12
@@ -279,6 +292,26 @@ const TourbillonAnimations = () => {
         child.add(collider)
         southColliderRef.current = collider
       }
+
+      // TourbillonWest collider
+      if (child.name === 'TourbillonWestWeigth' && !child.userData.colliderCreated) {
+        child.userData.colliderCreated = true
+        const box = new THREE.Box3().setFromObject(child)
+        const size = new THREE.Vector3()
+        const center = new THREE.Vector3()
+        box.getSize(size)
+        box.getCenter(center)
+        const radius = (Math.max(size.x, size.y, size.z) / 2) * 1.4
+        const sphereGeom = new THREE.SphereGeometry(radius, 12, 12)
+        const colliderMat = new THREE.MeshBasicMaterial({ transparent: true, opacity: 0, depthWrite: false, visible: false })
+        const collider = new THREE.Mesh(sphereGeom, colliderMat)
+        collider.name = 'TourbillonWestCollider'
+        // Position the collider at the center of the box in local space
+        collider.position.copy(center).sub(child.position)
+        child.add(collider)
+        westColliderRef.current = collider
+      }
+
 
       // Exploded pieces (root)
       if (EXPLODE_ALL_PIECE_NAMES.includes(child.name)) {
@@ -303,6 +336,11 @@ const TourbillonAnimations = () => {
           child.userData.defaultPos = child.position.clone()
           child.userData.defaultRot = child.rotation.clone()
         }
+      }
+
+      // Apply procedural chunk explosion if targeted
+      if (child.isMesh && CHUNK_EXPLODE_TARGETS.includes(child.name)) {
+        applyChunkExplosion(child, { seed: 42, proximity: 0.4, quantity: 25, area: 1.2 })
       }
       if (child.name === 'AlquimiaTourbillonDome') {
         domeRef.current = child
@@ -344,7 +382,14 @@ const TourbillonAnimations = () => {
       isHoveredEast.current = false
       isHoveredNorth.current = false
       isHoveredSouth.current = false
+      isHoveredWest.current = false
+      setHoverTitle(null)
       document.body.style.cursor = 'auto'
+
+      // Keep GEARS running during exploded view, except CenterPivotRotation
+      if (globalActions['GEARS']) gsap.to(globalActions['GEARS'], { timeScale: 1, duration: 1.5, ease: 'power2.inOut' })
+      if (globalActions['TOPGEARS']) gsap.to(globalActions['TOPGEARS'], { timeScale: 1, duration: 1.5, ease: 'power2.inOut' })
+      if (globalActions['GEARS__CenterPivotRotation']) gsap.to(globalActions['GEARS__CenterPivotRotation'], { timeScale: 0, duration: 1.5, ease: 'power2.inOut' })
 
       // Determine active pieces and excludes
       const activePieces =
@@ -493,16 +538,16 @@ const TourbillonAnimations = () => {
 
         }
         if (pieces['TourbillonNorthInnerG2']) {
-          gsap.to(pieces['TourbillonNorthInnerG2'].position, { x: -1.8, y: 4.8, z: 6.5, duration: 3.0, ease: 'power3.out' })
+          gsap.to(pieces['TourbillonNorthInnerG2'].position, { x: -1.9, y: 5.2, z: 6.5, duration: 3.0, ease: 'power3.out' })
           gsap.to(pieces['TourbillonNorthInnerG2'].rotation, {
             x: pieces['TourbillonNorthInnerG2'].userData.defaultRot.x,
-            y: pieces['TourbillonNorthInnerG2'].userData.defaultRot.y + 7,
+            y: pieces['TourbillonNorthInnerG2'].userData.defaultRot.y + 5,
             z: pieces['TourbillonNorthInnerG2'].userData.defaultRot.z + 5,
             duration: 3.0, ease: 'power3.out',
           })
         }
         if (pieces['TourbillonNorthInnerG3']) {
-          gsap.to(pieces['TourbillonNorthInnerG3'].position, { x: -3.5, y: 5.4, z: 5.8, duration: 3.5, ease: 'power3.out' })
+          gsap.to(pieces['TourbillonNorthInnerG3'].position, { x: -3.5, y: 5.5, z: 5.8, duration: 3.5, ease: 'power3.out' })
           gsap.to(pieces['TourbillonNorthInnerG3'].rotation, {
             x: pieces['TourbillonNorthInnerG3'].userData.defaultRot.x,
             y: pieces['TourbillonNorthInnerG3'].userData.defaultRot.y - 12,
@@ -514,63 +559,44 @@ const TourbillonAnimations = () => {
         // Do NOT modify their rotation so they keep their original orientation from Blender
 
         // ── Animate North Inner children with 1s delay after parent settles (3s + 1s = 4s) ──
-        gsap.delayedCall(2.0, () => {
-          NORTH_INNER_CHILD_NAMES.forEach(name => {
-            const child = pieces['TourbillonNorthBolt1']
+        const northChildren = [
+          { name: 'TourbillonNorthBolt1', delay: 2.0, yOffset: 0.4 },
+          { name: 'TourbillonNorthBolt2', delay: 2.2, yOffset: 0.8 },
+          { name: 'TourbillonNorthBolt3', delay: 2.4, yOffset: 1.0 },
+          { name: 'TourbillonNorthCenter', delay: 2.6, yOffset: 1.1 },
+        ];
+
+        northChildren.forEach(({ name, delay, yOffset }) => {
+          gsap.delayedCall(delay, () => {
+            const child = pieces[name]
             if (!child) return
             gsap.killTweensOf(child.position)
-            gsap.to(child.position, {
-              y: child.userData.defaultPos.y + 0.4,
-              duration: 1.5,
-              ease: 'power3.out'
-            })
-          }
-          )
-        })
+            gsap.killTweensOf(child.rotation)
+            if (child.userData.orbitObj) gsap.killTweensOf(child.userData.orbitObj)
 
+            child.userData.orbitObj = { angle: 0 }
 
-        gsap.delayedCall(2.2, () => {
-          NORTH_INNER_CHILD_NAMES.forEach(name => {
-            const child = pieces['TourbillonNorthBolt2']
-            if (!child) return
-            gsap.killTweensOf(child.position)
             gsap.to(child.position, {
-              y: child.userData.defaultPos.y + 0.8,
+              y: child.userData.defaultPos.y + yOffset,
               duration: 1.5,
               ease: 'power3.out',
-
+              onComplete: () => {
+                gsap.to(child.userData.orbitObj, {
+                  angle: Math.PI * 2,
+                  duration: 10,
+                  ease: "none",
+                  repeat: -1,
+                  onUpdate: () => {
+                    const a = child.userData.orbitObj.angle;
+                    child.position.x = child.userData.defaultPos.x * Math.cos(a) - child.userData.defaultPos.z * Math.sin(a);
+                    child.position.z = child.userData.defaultPos.x * Math.sin(a) + child.userData.defaultPos.z * Math.cos(a);
+                    child.rotation.y = child.userData.defaultRot.y + a;
+                  }
+                });
+              }
             })
-          }
-          )
-        })
-
-        gsap.delayedCall(2.4, () => {
-          NORTH_INNER_CHILD_NAMES.forEach(name => {
-            const child = pieces['TourbillonNorthBolt3']
-            if (!child) return
-            gsap.killTweensOf(child.position)
-            gsap.to(child.position, {
-              y: child.userData.defaultPos.y + 1,
-              duration: 1.5,
-              ease: 'power3.out'
-            })
-          }
-          )
-        })
-
-        gsap.delayedCall(2.6, () => {
-          NORTH_INNER_CHILD_NAMES.forEach(name => {
-            const child = pieces['TourbillonNorthCenter']
-            if (!child) return
-            gsap.killTweensOf(child.position)
-            gsap.to(child.position, {
-              y: child.userData.defaultPos.y + 1.1,
-              duration: 1.5,
-              ease: 'power3.out'
-            })
-          }
-          )
-        })
+          })
+        });
       } else if (isExploded === 'south') {
         // ── South exploded animations (WORLD SPACE) ────────────────────
         ANIMATED_SOUTH_PIECE_NAMES.forEach(name => {
@@ -625,30 +651,44 @@ const TourbillonAnimations = () => {
         }
 
         // ── Animate South Inner children with staggered delay ─────────
-        gsap.delayedCall(2.0, () => {
-          const child = pieces['TourbillonSouthBolt1']
-          if (!child) return
-          gsap.killTweensOf(child.position)
-          gsap.to(child.position, { y: child.userData.defaultPos.y + 0.4, duration: 1.5, ease: 'power3.out' })
-        })
-        gsap.delayedCall(2.2, () => {
-          const child = pieces['TourbillonSouthBolt2']
-          if (!child) return
-          gsap.killTweensOf(child.position)
-          gsap.to(child.position, { y: child.userData.defaultPos.y + 0.8, duration: 1.5, ease: 'power3.out' })
-        })
-        gsap.delayedCall(2.4, () => {
-          const child = pieces['TourbillonSouthBolt3']
-          if (!child) return
-          gsap.killTweensOf(child.position)
-          gsap.to(child.position, { y: child.userData.defaultPos.y + 1, duration: 1.5, ease: 'power3.out' })
-        })
-        gsap.delayedCall(2.6, () => {
-          const child = pieces['TourbillonSouthCenter']
-          if (!child) return
-          gsap.killTweensOf(child.position)
-          gsap.to(child.position, { y: child.userData.defaultPos.y + 1.1, duration: 1.5, ease: 'power3.out' })
-        })
+        const southChildren = [
+          { name: 'TourbillonSouthBolt1', delay: 2.0, yOffset: 0.4 },
+          { name: 'TourbillonSouthBolt2', delay: 2.2, yOffset: 0.8 },
+          { name: 'TourbillonSouthBolt3', delay: 2.4, yOffset: 1.0 },
+          { name: 'TourbillonSouthCenter', delay: 2.6, yOffset: 1.1 },
+        ];
+
+        southChildren.forEach(({ name, delay, yOffset }) => {
+          gsap.delayedCall(delay, () => {
+            const child = pieces[name]
+            if (!child) return
+            gsap.killTweensOf(child.position)
+            gsap.killTweensOf(child.rotation)
+            if (child.userData.orbitObj) gsap.killTweensOf(child.userData.orbitObj)
+
+            child.userData.orbitObj = { angle: 0 }
+
+            gsap.to(child.position, {
+              y: child.userData.defaultPos.y + yOffset,
+              duration: 1.5,
+              ease: 'power3.out',
+              onComplete: () => {
+                gsap.to(child.userData.orbitObj, {
+                  angle: Math.PI * 2,
+                  duration: 10,
+                  ease: "none",
+                  repeat: -1,
+                  onUpdate: () => {
+                    const a = child.userData.orbitObj.angle;
+                    child.position.x = child.userData.defaultPos.x * Math.cos(a) - child.userData.defaultPos.z * Math.sin(a);
+                    child.position.z = child.userData.defaultPos.x * Math.sin(a) + child.userData.defaultPos.z * Math.cos(a);
+                    child.rotation.y = child.userData.defaultRot.y + a;
+                  }
+                });
+              }
+            })
+          })
+        });
       }
 
       // ── Build invisible sphere colliders for interactive exploded pieces ─────
@@ -696,7 +736,9 @@ const TourbillonAnimations = () => {
     } else {
       // ── Collapse ────────────────────────────────────────────────────
       waypointCameraState.hoveredObject = null
-        ;[
+      // Reset section camera waypoint
+      setActiveSection(null)
+      ;[
           alquimiaColliderRef, innerRingColliderRef,
           northOutterColliderRef, northInnerColliderRef, northG4ColliderRef, northG2ColliderRef, northG3ColliderRef,
           southOutterColliderRef, southInnerColliderRef, southG4ColliderRef, southG2ColliderRef, southG3ColliderRef,
@@ -724,6 +766,8 @@ const TourbillonAnimations = () => {
         gsap.to(globalActions['GEARS'], { timeScale: 1, duration: 1.5, ease: 'power2.in' })
       if (globalActions['TOPGEARS'])
         gsap.to(globalActions['TOPGEARS'], { timeScale: 1, duration: 1.5, ease: 'power2.in' })
+      if (globalActions['GEARS__CenterPivotRotation'])
+        gsap.to(globalActions['GEARS__CenterPivotRotation'], { timeScale: 1, duration: 1.5, ease: 'power2.in' })
 
       if (enableGTRef.current) {
         forceAllProgressTo(1.0)
@@ -769,10 +813,18 @@ const TourbillonAnimations = () => {
         const child = pieces[name]
         if (child && child.userData.defaultPos) {
           gsap.killTweensOf(child.position)
+          gsap.killTweensOf(child.rotation)
+          if (child.userData.orbitObj) gsap.killTweensOf(child.userData.orbitObj)
           gsap.to(child.position, {
             x: child.userData.defaultPos.x,
             y: child.userData.defaultPos.y,
             z: child.userData.defaultPos.z,
+            duration: 2.0, ease: 'power2.inOut',
+          })
+          gsap.to(child.rotation, {
+            x: child.userData.defaultRot.x,
+            y: child.userData.defaultRot.y,
+            z: child.userData.defaultRot.z,
             duration: 2.0, ease: 'power2.inOut',
           })
         }
@@ -784,10 +836,18 @@ const TourbillonAnimations = () => {
         const child = pieces[name]
         if (child && child.userData.defaultPos) {
           gsap.killTweensOf(child.position)
+          gsap.killTweensOf(child.rotation)
+          if (child.userData.orbitObj) gsap.killTweensOf(child.userData.orbitObj)
           gsap.to(child.position, {
             x: child.userData.defaultPos.x,
             y: child.userData.defaultPos.y,
             z: child.userData.defaultPos.z,
+            duration: 2.0, ease: 'power2.inOut',
+          })
+          gsap.to(child.rotation, {
+            x: child.userData.defaultRot.x,
+            y: child.userData.defaultRot.y,
+            z: child.userData.defaultRot.z,
             duration: 2.0, ease: 'power2.inOut',
           })
         }
@@ -812,12 +872,13 @@ const TourbillonAnimations = () => {
       })
     }
   }, [isExploded, scene, forceAllProgressTo, setNonExplodedMeshesVisible,
-    progressTunnelFloor, progressCrystals, progressDome, progressSystem, setTooltip])
+    progressTunnelFloor, progressCrystals, progressDome, progressSystem, setTooltip, setActiveSection])
 
   // ── Per-frame logic ───────────────────────────────────────────────────────
   const _raycaster = new THREE.Raycaster()
 
   useFrame((state, delta) => {
+
     if (pivotRef.current) {
       camera.getWorldPosition(_camPos)
       const cameraY = _camPos.y
@@ -850,6 +911,7 @@ const TourbillonAnimations = () => {
         if (currentlyHovered && !isHoveredEast.current) {
           isHoveredEast.current = true
           document.body.style.cursor = 'pointer'
+          setHoverTitle('THEapothecary')
           if (globalActions['GEARS']) gsap.to(globalActions['GEARS'], { timeScale: 0, duration: 1.5, ease: 'power2.out' })
           if (globalActions['TOPGEARS']) gsap.to(globalActions['TOPGEARS'], { timeScale: 0, duration: 1.5, ease: 'power2.out' })
           if (domeRef.current) {
@@ -862,6 +924,7 @@ const TourbillonAnimations = () => {
         } else if (!currentlyHovered && isHoveredEast.current) {
           isHoveredEast.current = false
           document.body.style.cursor = 'auto'
+          setHoverTitle(null)
           if (globalActions['GEARS']) gsap.to(globalActions['GEARS'], { timeScale: 1, duration: 1.5, ease: 'power2.in' })
           if (globalActions['TOPGEARS']) gsap.to(globalActions['TOPGEARS'], { timeScale: 1, duration: 1.5, ease: 'power2.in' })
           if (domeRef.current) {
@@ -883,11 +946,13 @@ const TourbillonAnimations = () => {
         if (currentlyHovered && !isHoveredNorth.current) {
           isHoveredNorth.current = true
           document.body.style.cursor = 'pointer'
+          setHoverTitle('THEhotel')
           if (globalActions['GEARS']) gsap.to(globalActions['GEARS'], { timeScale: 0, duration: 1.5, ease: 'power2.out' })
           if (globalActions['TOPGEARS']) gsap.to(globalActions['TOPGEARS'], { timeScale: 0, duration: 1.5, ease: 'power2.out' })
         } else if (!currentlyHovered && isHoveredNorth.current) {
           isHoveredNorth.current = false
           document.body.style.cursor = 'auto'
+          setHoverTitle(null)
           if (globalActions['GEARS']) gsap.to(globalActions['GEARS'], { timeScale: 1, duration: 1.5, ease: 'power2.in' })
           if (globalActions['TOPGEARS']) gsap.to(globalActions['TOPGEARS'], { timeScale: 1, duration: 1.5, ease: 'power2.in' })
         }
@@ -902,11 +967,34 @@ const TourbillonAnimations = () => {
         if (currentlyHovered && !isHoveredSouth.current) {
           isHoveredSouth.current = true
           document.body.style.cursor = 'pointer'
+          setHoverTitle('THEstore')
           if (globalActions['GEARS']) gsap.to(globalActions['GEARS'], { timeScale: 0, duration: 1.5, ease: 'power2.out' })
           if (globalActions['TOPGEARS']) gsap.to(globalActions['TOPGEARS'], { timeScale: 0, duration: 1.5, ease: 'power2.out' })
         } else if (!currentlyHovered && isHoveredSouth.current) {
           isHoveredSouth.current = false
           document.body.style.cursor = 'auto'
+          setHoverTitle(null)
+          if (globalActions['GEARS']) gsap.to(globalActions['GEARS'], { timeScale: 1, duration: 1.5, ease: 'power2.in' })
+          if (globalActions['TOPGEARS']) gsap.to(globalActions['TOPGEARS'], { timeScale: 1, duration: 1.5, ease: 'power2.in' })
+        }
+      }
+
+      // West hover
+      const westTarget = westColliderRef.current
+      if (westTarget) {
+        const intersects = _raycaster.intersectObject(westTarget, false)
+        const currentlyHovered = intersects.length > 0
+
+        if (currentlyHovered && !isHoveredWest.current) {
+          isHoveredWest.current = true
+          document.body.style.cursor = 'pointer'
+          setHoverTitle('MAD')
+          if (globalActions['GEARS']) gsap.to(globalActions['GEARS'], { timeScale: 0, duration: 1.5, ease: 'power2.out' })
+          if (globalActions['TOPGEARS']) gsap.to(globalActions['TOPGEARS'], { timeScale: 0, duration: 1.5, ease: 'power2.out' })
+        } else if (!currentlyHovered && isHoveredWest.current) {
+          isHoveredWest.current = false
+          document.body.style.cursor = 'auto'
+          setHoverTitle(null)
           if (globalActions['GEARS']) gsap.to(globalActions['GEARS'], { timeScale: 1, duration: 1.5, ease: 'power2.in' })
           if (globalActions['TOPGEARS']) gsap.to(globalActions['TOPGEARS'], { timeScale: 1, duration: 1.5, ease: 'power2.in' })
         }
@@ -942,6 +1030,10 @@ const TourbillonAnimations = () => {
                 gsap.killTweensOf(m.userData.overrideRot)
               }
             })
+            if (CHUNK_EXPLODE_TARGETS.includes('AlquimiaCircleOuter') && alquimiaMesh && alquimiaMesh.material.userData.uChunkProgress) {
+              gsap.killTweensOf(alquimiaMesh.material.userData.uChunkProgress)
+              gsap.to(alquimiaMesh.material.userData.uChunkProgress, { value: 1.0, duration: 0.8, ease: 'power2.out' })
+            }
           } else if (!hit && isHoveredAlquimia.current) {
             isHoveredAlquimia.current = false
             document.body.style.cursor = 'auto'
@@ -964,6 +1056,10 @@ const TourbillonAnimations = () => {
                 })
               }
             })
+            if (CHUNK_EXPLODE_TARGETS.includes('AlquimiaCircleOuter') && alquimiaMesh && alquimiaMesh.material.userData.uChunkProgress) {
+              gsap.killTweensOf(alquimiaMesh.material.userData.uChunkProgress)
+              gsap.to(alquimiaMesh.material.userData.uChunkProgress, { value: 0.0, duration: 0.8, ease: 'power2.out' })
+            }
           }
 
           if (isHoveredAlquimia.current && alquimiaMesh) {
@@ -996,6 +1092,10 @@ const TourbillonAnimations = () => {
             setTooltip({ text: 'The Science / Information' })
             waypointCameraState.hoveredObject = 'InnerRingEast'
             if (innerMesh) gsap.killTweensOf(innerMesh.rotation)
+            if (CHUNK_EXPLODE_TARGETS.includes('InnerRingEast') && innerMesh && innerMesh.material.userData.uChunkProgress) {
+              gsap.killTweensOf(innerMesh.material.userData.uChunkProgress)
+              gsap.to(innerMesh.material.userData.uChunkProgress, { value: 1.0, duration: 0.8, ease: 'power2.out' })
+            }
           } else if (!hit && isHoveredInnerRing.current) {
             isHoveredInnerRing.current = false
             document.body.style.cursor = 'auto'
@@ -1012,6 +1112,10 @@ const TourbillonAnimations = () => {
                 z: innerMesh.userData.defaultRot.z,
                 duration: 1.0, ease: 'power2.out',
               })
+            }
+            if (CHUNK_EXPLODE_TARGETS.includes('InnerRingEast') && innerMesh && innerMesh.material.userData.uChunkProgress) {
+              gsap.killTweensOf(innerMesh.material.userData.uChunkProgress)
+              gsap.to(innerMesh.material.userData.uChunkProgress, { value: 0.0, duration: 0.8, ease: 'power2.out' })
             }
           }
 
@@ -1056,6 +1160,10 @@ const TourbillonAnimations = () => {
               waypointCameraState.hoveredObject = meshName
               gsap.killTweensOf(mesh.position)
               gsap.to(mesh.position, { y: '+=0.03', duration: 1.5, yoyo: true, repeat: -1, ease: 'sine.inOut' })
+              if (CHUNK_EXPLODE_TARGETS.includes(meshName) && mesh.material.userData.uChunkProgress) {
+                gsap.killTweensOf(mesh.material.userData.uChunkProgress)
+                gsap.to(mesh.material.userData.uChunkProgress, { value: 1.0, duration: 0.8, ease: 'power2.out' })
+              }
             } else if (!hit && isHoveredRef.current) {
               isHoveredRef.current = false
               document.body.style.cursor = 'auto'
@@ -1064,6 +1172,10 @@ const TourbillonAnimations = () => {
               if (mesh.userData.worldExplodedY !== undefined) {
                 gsap.killTweensOf(mesh.position)
                 gsap.to(mesh.position, { y: mesh.userData.worldExplodedY, duration: 1.0, ease: 'power2.out' })
+              }
+              if (CHUNK_EXPLODE_TARGETS.includes(meshName) && mesh.material.userData.uChunkProgress) {
+                gsap.killTweensOf(mesh.material.userData.uChunkProgress)
+                gsap.to(mesh.material.userData.uChunkProgress, { value: 0.0, duration: 0.8, ease: 'power2.out' })
               }
             }
             if (isHoveredRef.current) mesh.rotation.y += delta * 1.0
@@ -1104,6 +1216,10 @@ const TourbillonAnimations = () => {
               waypointCameraState.hoveredObject = meshName
               gsap.killTweensOf(mesh.position)
               gsap.to(mesh.position, { y: '+=0.03', duration: 1.5, yoyo: true, repeat: -1, ease: 'sine.inOut' })
+              if (CHUNK_EXPLODE_TARGETS.includes(meshName) && mesh.material.userData.uChunkProgress) {
+                gsap.killTweensOf(mesh.material.userData.uChunkProgress)
+                gsap.to(mesh.material.userData.uChunkProgress, { value: 1.0, duration: 0.8, ease: 'power2.out' })
+              }
             } else if (!hit && isHoveredRef.current) {
               isHoveredRef.current = false
               document.body.style.cursor = 'auto'
@@ -1112,6 +1228,10 @@ const TourbillonAnimations = () => {
               if (mesh.userData.worldExplodedY !== undefined) {
                 gsap.killTweensOf(mesh.position)
                 gsap.to(mesh.position, { y: mesh.userData.worldExplodedY, duration: 1.0, ease: 'power2.out' })
+              }
+              if (CHUNK_EXPLODE_TARGETS.includes(meshName) && mesh.material.userData.uChunkProgress) {
+                gsap.killTweensOf(mesh.material.userData.uChunkProgress)
+                gsap.to(mesh.material.userData.uChunkProgress, { value: 0.0, duration: 0.8, ease: 'power2.out' })
               }
             }
             if (isHoveredRef.current) mesh.rotation.y += delta * 1.0
@@ -1160,43 +1280,53 @@ const TourbillonAnimations = () => {
         }
       } else if (isExploded === 'north') {
         if (isHoveredNorthOutter.current) {
+          setActiveSection('bookroom')
           setActiveModal('suites')
           return
         }
         if (isHoveredNorthInner.current) {
+          setActiveSection('suites')
           setActiveModal('adventures')
           return
         }
         if (isHoveredNorthG4.current) {
+          setActiveSection('events')
           setActiveModal('events')
           return
         }
         if (isHoveredNorthG2.current) {
+          setActiveSection('adventures')
           setActiveModal('events')
           return
         }
         if (isHoveredNorthG3.current) {
+          setActiveSection('events')
           setActiveModal('events')
           return
         }
       } else if (isExploded === 'south') {
         if (isHoveredSouthOutter.current) {
+          setActiveSection('bookroom')
           setActiveModal('suites')
           return
         }
         if (isHoveredSouthInner.current) {
+          setActiveSection('suites')
           setActiveModal('adventures')
           return
         }
         if (isHoveredSouthG4.current) {
+          setActiveSection('events')
           setActiveModal('events')
           return
         }
         if (isHoveredSouthG2.current) {
+          setActiveSection('adventures')
           setActiveModal('events')
           return
         }
         if (isHoveredSouthG3.current) {
+          setActiveSection('events')
           setActiveModal('events')
           return
         }
@@ -1204,7 +1334,7 @@ const TourbillonAnimations = () => {
     }
     window.addEventListener('click', onClick)
     return () => window.removeEventListener('click', onClick)
-  }, [isExploded, activeModal, setExploded, setActiveModal])
+  }, [isExploded, activeModal, setExploded, setActiveModal, setActiveSection])
 
   return null
 }

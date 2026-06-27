@@ -8,6 +8,14 @@ export const ExplodedProvider = ({ children }) => {
   // tooltip: null | { text: string }
   const [tooltip, setTooltip] = useState(null);
 
+  // Active section for North and South exploded views — drives per-section camera waypoints
+  // Values: null | 'events' | 'adventures' | 'bookroom' | 'suites'
+  const [activeSection, setActiveSection] = useState(null);
+
+  // Hover title for the main Tourbillons
+  const [hoverTitle, setHoverTitle] = useState(null);
+
+
   // Legacy single progress kept for backward compat (not used for staggered groups)
   const transitionProgress = useRef(0.0);
 
@@ -27,6 +35,10 @@ export const ExplodedProvider = ({ children }) => {
       setActiveModal,
       tooltip,
       setTooltip,
+      activeSection,
+      setActiveSection,
+      hoverTitle,
+      setHoverTitle,
       transitionProgress,       // legacy — kept for compat
       progressTunnelFloor,
       progressCrystals,

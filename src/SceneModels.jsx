@@ -205,6 +205,8 @@ const SceneModels = ({
       if (actions[actionName]) actions[actionName].stop()
 
       const splitActionList = []
+      // Map: objectName → list of split actions for that object
+      const perObjectActions = {}
 
       clip.tracks.forEach((track) => {
         // Track names are like "ObjectName.quaternion" or "ObjectName.position"
@@ -230,6 +232,10 @@ const SceneModels = ({
         action.clampWhenFinished = false
         action.reset().setLoop(THREE.LoopRepeat, Infinity).play()
         splitActionList.push(action)
+
+        // Group by objectName for per-object proxy
+        if (!perObjectActions[objectName]) perObjectActions[objectName] = []
+        perObjectActions[objectName].push(action)
       })
 
       // ── GSAP-friendly proxy: animating timeScale on it propagates to all split actions
@@ -242,6 +248,14 @@ const SceneModels = ({
         },
       }
       globalActions[actionName] = proxy
+
+      // ── Per-object proxies: globalActions['GEARS__ObjectName'] controls a single object
+      Object.entries(perObjectActions).forEach(([objName, objActions]) => {
+        globalActions[`${actionName}__${objName}`] = {
+          get timeScale() { return objActions[0]?.timeScale ?? 1 },
+          set timeScale(v) { objActions.forEach(a => { a.timeScale = v }) },
+        }
+      })
     }
 
     splitAndPlayAction('GEARS')

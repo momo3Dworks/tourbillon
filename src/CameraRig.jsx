@@ -84,11 +84,82 @@ const _target = new THREE.Vector3()
 import { useExploded } from './ExplodedContext'
 import { useControls } from 'leva'
 
+// ────────────────────────────────────────────────────────────────────────────────
+// NORTH EXPLODED VIEW — Per-section camera waypoints
+// Camera is positioned to the RIGHT so the left 45% viewport is free for the UI panel.
+// Tune these values in Leva or adjust directly here.
+// ────────────────────────────────────────────────────────────────────────────────
+export const NORTH_SECTION_WAYPOINTS = {
+  // Events — TourbillonNorthOutter / G3 / G4 area (left side of exploded layout)
+  events: {
+    position: [-2.5, 5, 6.8],
+    target: [-5, 5, 2],
+    fov: 60,
+    dof: { focusDistance: 0.1, focalLength: 48, bokehScale: 6 },
+  },
+  // THEadventures — TourbillonNorthInnerG2 area
+  adventures: {
+    position: [-1.5, 5.1, 7.5],
+    target: [-3, 5, 2],
+    fov: 60,
+    dof: { focusDistance: 0.5, focalLength: 100, bokehScale: 6 },
+  },
+  // Book a Room — TourbillonNorthOutter area
+  bookroom: {
+    position: [0, 4.8, 7.2],
+    target: [0, 5, 2],
+    fov: 60,
+    dof: { focusDistance: 1, focalLength: 100, bokehScale: 5 },
+  },
+  // THEsuites — TourbillonNorthInner area (right side of exploded layout)
+  suites: {
+    position: [2, 6.5, 6],
+    target: [3.2, 5, 4.8],
+    fov: 60,
+    dof: { focusDistance: 10, focalLength: 10, bokehScale: 6 },
+  },
+}
+
+// ────────────────────────────────────────────────────────────────────────────────
+// SOUTH EXPLODED VIEW — Per-section camera waypoints
+// Camera is positioned to frame objects to the LEFT, leaving the right 45% for UI.
+// ────────────────────────────────────────────────────────────────────────────────
+export const SOUTH_SECTION_WAYPOINTS = {
+  // Events — TourbillonSouthInnerG3 / G4 area (~ x: -3.2)
+  events: {
+    position: [-4.5, 5, 6.8],
+    target: [-1.4, 5, 2],
+    fov: 60,
+    dof: { focusDistance: 0.1, focalLength: 48, bokehScale: 6 },
+  },
+  // THEadventures — TourbillonSouthInnerG2 area (~ x: -2.3)
+  adventures: {
+    position: [-3.5, 5.1, 7.5],
+    target: [-0.5, 5, 2],
+    fov: 60,
+    dof: { focusDistance: 0.5, focalLength: 100, bokehScale: 6 },
+  },
+  // Book a Room — TourbillonSouthOutter area (~ x: 0)
+  bookroom: {
+    position: [-2.0, 4.8, 7.2],
+    target: [2.0, 5, 2],
+    fov: 60,
+    dof: { focusDistance: 1, focalLength: 100, bokehScale: 5 },
+  },
+  // THEsuites — TourbillonSouthInner area (~ x: 3.4)
+  suites: {
+    position: [0.5, 6.5, 6],
+    target: [5.4, 5, 4.8],
+    fov: 60,
+    dof: { focusDistance: 10, focalLength: 10, bokehScale: 6 },
+  },
+}
+
 const lerp3 = (a, b, t) => new THREE.Vector3(...a).lerp(new THREE.Vector3(...b), t)
 
 const CameraRig = () => {
   const { camera, scene, performance } = useThree()
-  const { isExploded } = useExploded()
+  const { isExploded, activeSection } = useExploded()
 
   const explodedCam = useControls('Exploded View Camera', {
     posX: { value: 0, min: -100, max: 100, step: 0.5, label: 'Position X' },
@@ -196,6 +267,16 @@ const CameraRig = () => {
       velocity.current = 0
     }
 
+    // Update scroll tooltip opacity
+    const scrollTooltipEl = document.getElementById('scroll-tooltip')
+    if (scrollTooltipEl) {
+      if (progress.current > 2.5) {
+        scrollTooltipEl.style.opacity = '0'
+      } else {
+        scrollTooltipEl.style.opacity = '1'
+      }
+    }
+
     // Interpolate camera position and target
     let targetPos, targetLookAt
     let targetFov, targetFocusDist, targetFocalLen, targetBokeh
@@ -240,6 +321,21 @@ const CameraRig = () => {
       targetFocusDist = explodedCam.focusDistance
       targetFocalLen = explodedCam.focalLength
       targetBokeh = explodedCam.bokehScale
+
+      // Per-section North/South waypoints — override generic exploded camera
+      if ((isExploded === 'north' || isExploded === 'south') && activeSection) {
+        const wpMap = isExploded === 'north' ? NORTH_SECTION_WAYPOINTS : SOUTH_SECTION_WAYPOINTS
+        const sw = wpMap[activeSection]
+        if (sw) {
+          targetPos = new THREE.Vector3(...sw.position)
+          targetLookAt = new THREE.Vector3(...sw.target)
+          targetFov = sw.fov ?? explodedCam.fov
+          const sd = sw.dof
+          targetFocusDist = sd?.focusDistance ?? explodedCam.focusDistance
+          targetFocalLen = sd?.focalLength ?? explodedCam.focalLength
+          targetBokeh = sd?.bokehScale ?? explodedCam.bokehScale
+        }
+      }
 
       // Apply mouse parallax in Exploded View
       if (explodedCam.parallaxIntensity > 0) {
