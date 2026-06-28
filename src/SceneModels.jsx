@@ -37,6 +37,11 @@ const EXPLODED_PIECE_NAMES = [
   'TourbillonNorthBolt2',
   'TourbillonNorthBolt3',
   'TourbillonNorthCenter',
+  'TourbillonWestWeigth',
+  'Gear_1',
+  'G3',
+  'G5',
+  'G1',
 ]
 
 let dracoLoaderInstance = null
@@ -254,6 +259,8 @@ const SceneModels = ({
         globalActions[`${actionName}__${objName}`] = {
           get timeScale() { return objActions[0]?.timeScale ?? 1 },
           set timeScale(v) { objActions.forEach(a => { a.timeScale = v }) },
+          stop() { objActions.forEach(a => a.stop()) },
+          play() { objActions.forEach(a => { a.reset().setLoop(THREE.LoopRepeat, Infinity).play() }) },
         }
       })
     }
@@ -262,6 +269,7 @@ const SceneModels = ({
     splitAndPlayAction('TOPGEARS')
 
     console.log('Available Actions:', animationActions)
+
 
   }, [actions, allAnimations, mixer])
 

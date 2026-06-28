@@ -3,6 +3,24 @@ import { useFrame, useThree } from '@react-three/fiber'
 import * as THREE from 'three'
 
 // ─────────────────────────────────────────────────────────────────────────────
+// INTRO NAVIGATION MODE
+// ─────────────────────────────────────────────────────────────────────────────
+// Set USE_AUTO_INTRO to `true` to use the automatic "Meet The Tourbillon" button intro,
+// which automatically opens the Vault Door and moves the camera to waypoint 4.
+// Set to `false` to revert to the manual scroll-based intro.
+export const USE_AUTO_INTRO = true;
+
+// Speed parameter for the automatic intro (progress units per second).
+// Adjust this to sync the camera movement with the doors opening animation.
+export const AUTO_INTRO_SPEED = 0.5;
+
+// Global trigger state for automatic intro
+export const triggerAutoIntro = { current: false };
+
+// Global trigger state for automatic back to entrance
+export const triggerAutoBack = { current: false };
+
+// ─────────────────────────────────────────────────────────────────────────────
 // SCROLL TUNING
 // ─────────────────────────────────────────────────────────────────────────────
 // SCROLL_SENSITIVITY: progress units per pixel of wheel delta.
@@ -155,6 +173,18 @@ export const SOUTH_SECTION_WAYPOINTS = {
   },
 }
 
+// ────────────────────────────────────────────────────────────────────────────────
+// WEST EXPLODED VIEW — Per-section camera waypoints
+// ────────────────────────────────────────────────────────────────────────────────
+export const WEST_SECTION_WAYPOINTS = {
+  catering: {
+    position: [2.5, 6, 6.8],
+    target: [-3, 5, 4],
+    fov: 60,
+    dof: { focusDistance: 1, focalLength: 80, bokehScale: 5 },
+  },
+}
+
 const lerp3 = (a, b, t) => new THREE.Vector3(...a).lerp(new THREE.Vector3(...b), t)
 
 const CameraRig = () => {
@@ -248,12 +278,39 @@ const CameraRig = () => {
 
     // (Removed performance regression on movement)
 
-    // Integrate velocity into progress
-    progress.current = THREE.MathUtils.clamp(
-      progress.current + velocity.current,
-      -1.0,
-      maxIdx
-    )
+    if (USE_AUTO_INTRO && triggerAutoIntro.current) {
+      if (progress.current < 4.0) {
+        // Automatic intro mode: progress moves automatically to waypoint 4 ([3, 6, 3])
+        progress.current = THREE.MathUtils.clamp(
+          progress.current + delta * AUTO_INTRO_SPEED,
+          -1.0,
+          4.0
+        )
+        velocity.current = 0 // Reset manual velocity during auto intro
+      } else {
+        // Finished automatic intro, allow manual scrolling again
+        triggerAutoIntro.current = false
+      }
+    } else if (triggerAutoBack.current) {
+      if (progress.current > -1.0) {
+        // Automatic back mode: progress moves automatically to waypoint 0 ([0, 100, 0])
+        progress.current = THREE.MathUtils.clamp(
+          progress.current - delta * (AUTO_INTRO_SPEED * 1.5),
+          -1.0,
+          maxIdx
+        )
+        velocity.current = 0
+      } else {
+        triggerAutoBack.current = false
+      }
+    } else {
+      // Integrate velocity into progress (manual scroll mode)
+      progress.current = THREE.MathUtils.clamp(
+        progress.current + velocity.current,
+        -1.0,
+        maxIdx
+      )
+    }
 
     // Sync global scroll progress
     scrollProgress.current = progress.current
@@ -270,10 +327,24 @@ const CameraRig = () => {
     // Update scroll tooltip opacity
     const scrollTooltipEl = document.getElementById('scroll-tooltip')
     if (scrollTooltipEl) {
-      if (progress.current > 2.5) {
+      if (progress.current > 2.5 || (USE_AUTO_INTRO && triggerAutoIntro.current) || triggerAutoBack.current) {
         scrollTooltipEl.style.opacity = '0'
+        scrollTooltipEl.style.pointerEvents = 'none'
       } else {
         scrollTooltipEl.style.opacity = '1'
+        if (USE_AUTO_INTRO) scrollTooltipEl.style.pointerEvents = 'auto'
+      }
+    }
+
+    // Update Back to Entrance button opacity
+    const backBtnEl = document.getElementById('back-to-entrance-btn')
+    if (backBtnEl) {
+      if (progress.current >= 3.9 && !isExploded && !triggerAutoBack.current) {
+        backBtnEl.style.opacity = '1'
+        backBtnEl.style.pointerEvents = 'auto'
+      } else {
+        backBtnEl.style.opacity = '0'
+        backBtnEl.style.pointerEvents = 'none'
       }
     }
 
@@ -322,15 +393,19 @@ const CameraRig = () => {
       targetFocalLen = explodedCam.focalLength
       targetBokeh = explodedCam.bokehScale
 
-      // Per-section North/South waypoints — override generic exploded camera
-      if ((isExploded === 'north' || isExploded === 'south') && activeSection) {
-        const wpMap = isExploded === 'north' ? NORTH_SECTION_WAYPOINTS : SOUTH_SECTION_WAYPOINTS
-        const sw = wpMap[activeSection]
-        if (sw) {
-          targetPos = new THREE.Vector3(...sw.position)
-          targetLookAt = new THREE.Vector3(...sw.target)
-          targetFov = sw.fov ?? explodedCam.fov
-          const sd = sw.dof
+      // Per-section waypoints — override generic exploded camera
+      if (activeSection) {
+        // Move to specific section focus point
+        const targetWp = isExploded === 'east' ? EAST_SECTION_WAYPOINTS[activeSection] :
+                         isExploded === 'north' ? NORTH_SECTION_WAYPOINTS[activeSection] :
+                         isExploded === 'south' ? SOUTH_SECTION_WAYPOINTS[activeSection] :
+                         isExploded === 'west' ? WEST_SECTION_WAYPOINTS[activeSection] :
+                         null
+        if (targetWp) {
+          targetPos = new THREE.Vector3(...targetWp.position)
+          targetLookAt = new THREE.Vector3(...targetWp.target)
+          targetFov = targetWp.fov ?? explodedCam.fov
+          const sd = targetWp.dof
           targetFocusDist = sd?.focusDistance ?? explodedCam.focusDistance
           targetFocalLen = sd?.focalLength ?? explodedCam.focalLength
           targetBokeh = sd?.bokehScale ?? explodedCam.bokehScale

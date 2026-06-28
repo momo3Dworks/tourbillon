@@ -86,7 +86,23 @@ const SOUTH_INNER_CHILD_NAMES = [
   'TourbillonSouthCenter'
 ]
 
-const EXPLODE_ALL_PIECE_NAMES = [...EXPLODE_EAST_PIECE_NAMES, ...EXPLODE_NORTH_PIECE_NAMES, ...EXPLODE_SOUTH_PIECE_NAMES]
+// ─── Pieces that stay visible during Exploded View (West) ───────────────────
+const EXPLODE_WEST_PIECE_NAMES = [
+  'TourbillonWestWeigth',
+  'Gear_1',
+  'G3',
+  'G5',
+  'G1',
+]
+const ANIMATED_WEST_PIECE_NAMES = [
+  'TourbillonWestWeigth',
+  'Gear_1',
+  'G3',
+  'G5',
+  'G1',
+]
+
+const EXPLODE_ALL_PIECE_NAMES = [...EXPLODE_EAST_PIECE_NAMES, ...EXPLODE_NORTH_PIECE_NAMES, ...EXPLODE_SOUTH_PIECE_NAMES, ...EXPLODE_WEST_PIECE_NAMES]
 
 // ─── Staggered sweep timing (duration and delay per group, in seconds) ─────────
 const EXPLODE_TIMING = {
@@ -151,6 +167,8 @@ const TourbillonAnimations = () => {
   const isHoveredAlquimia = useRef(false)
   const innerRingColliderRef = useRef(null)
   const isHoveredInnerRing = useRef(false)
+  const domeColliderRef = useRef(null)
+  const isHoveredDome = useRef(false)
 
   // North Explode Refs
   const northOutterColliderRef = useRef(null)
@@ -183,6 +201,22 @@ const TourbillonAnimations = () => {
 
   const southG3ColliderRef = useRef(null)
   const isHoveredSouthG3 = useRef(false)
+
+  // West Explode Refs
+  const westWeigthColliderRef = useRef(null)
+  const isHoveredWestWeigth = useRef(false)
+
+  const gear1ColliderRef = useRef(null)
+  const isHoveredGear1 = useRef(false)
+
+  const g3ColliderRef = useRef(null)
+  const isHoveredG3 = useRef(false)
+
+  const g5ColliderRef = useRef(null)
+  const isHoveredG5 = useRef(false)
+
+  const g1ColliderRef = useRef(null)
+  const isHoveredG1 = useRef(false)
 
   // ── Leva toggle: enable/disable GridTransition + mesh de-rendering ──
   const { enableGridTransition } = useControls('Exploded View', {
@@ -395,7 +429,8 @@ const TourbillonAnimations = () => {
       const activePieces =
         isExploded === 'east' ? EXPLODE_EAST_PIECE_NAMES :
           isExploded === 'south' ? EXPLODE_SOUTH_PIECE_NAMES :
-            EXPLODE_NORTH_PIECE_NAMES
+            isExploded === 'west' ? EXPLODE_WEST_PIECE_NAMES :
+              EXPLODE_NORTH_PIECE_NAMES
       const explicitlyExclude = isExploded === 'north' ? ['G1002'] : []
 
       // Kill existing tweens on animated pieces
@@ -408,6 +443,10 @@ const TourbillonAnimations = () => {
         if (m) { gsap.killTweensOf(m.position); gsap.killTweensOf(m.rotation) }
       })
       ANIMATED_SOUTH_PIECE_NAMES.forEach(name => {
+        const m = pieces[name]
+        if (m) { gsap.killTweensOf(m.position); gsap.killTweensOf(m.rotation) }
+      })
+      ANIMATED_WEST_PIECE_NAMES.forEach(name => {
         const m = pieces[name]
         if (m) { gsap.killTweensOf(m.position); gsap.killTweensOf(m.rotation) }
       })
@@ -449,7 +488,8 @@ const TourbillonAnimations = () => {
       const activeAnimPieces =
         isExploded === 'east' ? ANIMATED_EAST_PIECE_NAMES :
           isExploded === 'south' ? ANIMATED_SOUTH_PIECE_NAMES :
-            ANIMATED_NORTH_PIECE_NAMES
+            isExploded === 'west' ? ANIMATED_WEST_PIECE_NAMES :
+              ANIMATED_NORTH_PIECE_NAMES
       activeAnimPieces.forEach(name => {
         const mesh = pieces[name]
         if (mesh) {
@@ -462,7 +502,7 @@ const TourbillonAnimations = () => {
 
       if (isExploded === 'east') {
         if (pieces['AlquimiaTourbillonDome']) {
-          gsap.to(pieces['AlquimiaTourbillonDome'].position, { x: 0, y: 8, z: 0, duration: 3.0, ease: 'power3.out' })
+          gsap.to(pieces['AlquimiaTourbillonDome'].position, { x: -0.05, y: 4.5, z: 6, duration: 3.0, ease: 'power3.out' })
           gsap.to(pieces['AlquimiaTourbillonDome'].rotation, {
             x: pieces['AlquimiaTourbillonDome'].userData.defaultRot.x,
             y: pieces['AlquimiaTourbillonDome'].userData.defaultRot.y,
@@ -472,7 +512,7 @@ const TourbillonAnimations = () => {
         }
 
         if (pieces['InnerRingEast']) {
-          gsap.to(pieces['InnerRingEast'].position, { x: 1.4, y: 4.8, z: 7, duration: 2.0, ease: 'power3.out' })
+          gsap.to(pieces['InnerRingEast'].position, { x: 2, y: 4.8, z: 7, duration: 2.0, ease: 'power3.out' })
           gsap.to(pieces['InnerRingEast'].rotation, {
             x: pieces['InnerRingEast'].userData.defaultRot.x,
             y: pieces['InnerRingEast'].userData.defaultRot.y,
@@ -497,7 +537,7 @@ const TourbillonAnimations = () => {
         })
 
         if (pieces['AlquimiaCircleOuter']) {
-          gsap.to(pieces['AlquimiaCircleOuter'].position, { x: -1.2, y: 4.8, z: 7.5, duration: 2.0, ease: 'power3.out' })
+          gsap.to(pieces['AlquimiaCircleOuter'].position, { x: -2, y: 4.8, z: 7, duration: 2.0, ease: 'power3.out' })
         }
       } else if (isExploded === 'north') {
         // North exploded animations (WORLD SPACE)
@@ -689,6 +729,66 @@ const TourbillonAnimations = () => {
             })
           })
         });
+      } else if (isExploded === 'west') {
+        // ── West exploded animations (WORLD SPACE) ────────────────────
+        ANIMATED_WEST_PIECE_NAMES.forEach(name => {
+          const mesh = pieces[name]
+          if (mesh) { gsap.killTweensOf(mesh.position); gsap.killTweensOf(mesh.rotation) }
+        })
+
+        // Fully stop the per-object animation actions so the mixer releases rotation control.
+        // timeScale=0 is not enough — the mixer still writes the paused frame every tick.
+        const westMeshNames = ['TourbillonWestWeigth', 'Gear_1', 'G3', 'G3_2', 'G5', 'G5_2', 'G1', 'G1_1', 'G1_2']
+        westMeshNames.forEach(name => {
+          globalActions[`GEARS__${name}`]?.stop?.()
+          globalActions[`TOPGEARS__${name}`]?.stop?.()
+        })
+
+        if (pieces['TourbillonWestWeigth']) {
+          gsap.to(pieces['TourbillonWestWeigth'].position, { x: 1, y: 4.8, z: 4.8, duration: 3.0, ease: 'power3.out' })
+          gsap.to(pieces['TourbillonWestWeigth'].rotation, {
+            x: pieces['TourbillonWestWeigth'].userData.defaultRot.x + 1,
+            y: pieces['TourbillonWestWeigth'].userData.defaultRot.y + 1,
+            z: pieces['TourbillonWestWeigth'].userData.defaultRot.z,
+            duration: 3.0, ease: 'power3.out',
+          })
+        }
+        if (pieces['Gear_1']) {
+          gsap.to(pieces['Gear_1'].position, { x: 3, y: 4.8, z: 4.8, duration: 3.0, ease: 'power3.out' })
+          gsap.to(pieces['Gear_1'].rotation, {
+            x: pieces['Gear_1'].userData.defaultRot.x,
+            y: pieces['Gear_1'].userData.defaultRot.y + 1.5,
+            z: pieces['Gear_1'].userData.defaultRot.z + 1,
+            duration: 13.0, ease: 'power3.out',
+          })
+        }
+        if (pieces['G3']) {
+          gsap.to(pieces['G3'].position, { x: -2.5, y: 4.8, z: 5.8, duration: 2.8, ease: 'power3.out' })
+          gsap.to(pieces['G3'].rotation, {
+            x: pieces['G3'].userData.defaultRot.x + 5,
+            y: pieces['G3'].userData.defaultRot.y + 1,
+            z: pieces['G3'].userData.defaultRot.z + 5,
+            duration: 2.8, ease: 'power3.out',
+          })
+        }
+        if (pieces['G5']) {
+          gsap.to(pieces['G5'].position, { x: -0.7, y: 4.8, z: 7.8, duration: 3.0, ease: 'power3.out' })
+          gsap.to(pieces['G5'].rotation, {
+            x: pieces['G5'].userData.defaultRot.x + 1,
+            y: pieces['G5'].userData.defaultRot.y,
+            z: pieces['G5'].userData.defaultRot.z,
+            duration: 3.0, ease: 'power3.out',
+          })
+        }
+        if (pieces['G1']) {
+          gsap.to(pieces['G1'].position, { x: -3.5, y: 5, z: 5.8, duration: 3.5, ease: 'power3.out' })
+          gsap.to(pieces['G1'].rotation, {
+            x: pieces['G1'].userData.defaultRot.x,
+            y: pieces['G1'].userData.defaultRot.y + 2,
+            z: pieces['G1'].userData.defaultRot.z + 1,
+            duration: 3.3, ease: 'power3.out',
+          })
+        }
       }
 
       // ── Build invisible sphere colliders for interactive exploded pieces ─────
@@ -718,6 +818,7 @@ const TourbillonAnimations = () => {
         if (isExploded === 'east') {
           buildCollider(pieces['AlquimiaCircleOuter'], alquimiaColliderRef, 0.9)
           buildCollider(pieces['InnerRingEast'], innerRingColliderRef, 0.85)
+          buildCollider(pieces['AlquimiaTourbillonDome'], domeColliderRef, 0.9)
         } else if (isExploded === 'north') {
           buildCollider(pieces['TourbillonNorthOutter'], northOutterColliderRef, 0.85)
           buildCollider(pieces['TourbillonNorthInner'], northInnerColliderRef, 0.85)
@@ -730,6 +831,12 @@ const TourbillonAnimations = () => {
           buildCollider(pieces['TourbillonSouthInnerG4'], southG4ColliderRef, 0.85)
           buildCollider(pieces['TourbillonSouthInnerG2'], southG2ColliderRef, 0.85)
           buildCollider(pieces['TourbillonSouthInnerG3'], southG3ColliderRef, 0.85)
+        } else if (isExploded === 'west') {
+          buildCollider(pieces['TourbillonWestWeigth'], westWeigthColliderRef, 0.85)
+          buildCollider(pieces['Gear_1'], gear1ColliderRef, 0.85)
+          buildCollider(pieces['G3'], g3ColliderRef, 0.85)
+          buildCollider(pieces['G5'], g5ColliderRef, 0.85)
+          buildCollider(pieces['G1'], g1ColliderRef, 0.85)
         }
       }, 2200)
 
@@ -738,10 +845,11 @@ const TourbillonAnimations = () => {
       waypointCameraState.hoveredObject = null
       // Reset section camera waypoint
       setActiveSection(null)
-      ;[
-          alquimiaColliderRef, innerRingColliderRef,
+        ;[
+          alquimiaColliderRef, innerRingColliderRef, domeColliderRef,
           northOutterColliderRef, northInnerColliderRef, northG4ColliderRef, northG2ColliderRef, northG3ColliderRef,
           southOutterColliderRef, southInnerColliderRef, southG4ColliderRef, southG2ColliderRef, southG3ColliderRef,
+          westWeigthColliderRef, gear1ColliderRef, g3ColliderRef, g5ColliderRef, g1ColliderRef,
         ].forEach(ref => {
           if (ref.current) {
             ref.current.parent?.remove(ref.current)
@@ -750,6 +858,7 @@ const TourbillonAnimations = () => {
         })
       isHoveredAlquimia.current = false
       isHoveredInnerRing.current = false
+      isHoveredDome.current = false
       isHoveredNorthOutter.current = false
       isHoveredNorthInner.current = false
       isHoveredNorthG4.current = false
@@ -760,6 +869,11 @@ const TourbillonAnimations = () => {
       isHoveredSouthG4.current = false
       isHoveredSouthG2.current = false
       isHoveredSouthG3.current = false
+      isHoveredWestWeigth.current = false
+      isHoveredGear1.current = false
+      isHoveredG3.current = false
+      isHoveredG5.current = false
+      isHoveredG1.current = false
       setTooltip(null)
       document.body.style.cursor = 'auto'
       if (globalActions['GEARS'])
@@ -769,6 +883,12 @@ const TourbillonAnimations = () => {
       if (globalActions['GEARS__CenterPivotRotation'])
         gsap.to(globalActions['GEARS__CenterPivotRotation'], { timeScale: 1, duration: 1.5, ease: 'power2.in' })
 
+          // Restore West per-object animations (stopped with .stop() on West explode)
+          ;['TourbillonWestWeigth', 'Gear_1', 'G3', 'G3_2', 'G5', 'G5_2', 'G1', 'G1_1', 'G1_2'].forEach(name => {
+            globalActions[`GEARS__${name}`]?.play?.()
+            globalActions[`TOPGEARS__${name}`]?.play?.()
+          })
+
       if (enableGTRef.current) {
         forceAllProgressTo(1.0)
       }
@@ -776,8 +896,8 @@ const TourbillonAnimations = () => {
       // Always re-show all meshes (handles both GT-on and GT-off modes)
       setNonExplodedMeshesVisible(true, [], [])
 
-      // Re-parent East, North and South pieces
-      const allAnimatedPieces = [...ANIMATED_EAST_PIECE_NAMES, ...ANIMATED_NORTH_PIECE_NAMES, ...ANIMATED_SOUTH_PIECE_NAMES]
+      // Re-parent East, North, South and West pieces
+      const allAnimatedPieces = [...ANIMATED_EAST_PIECE_NAMES, ...ANIMATED_NORTH_PIECE_NAMES, ...ANIMATED_SOUTH_PIECE_NAMES, ...ANIMATED_WEST_PIECE_NAMES]
 
       allAnimatedPieces.forEach(name => {
         const mesh = pieces[name]
@@ -988,7 +1108,7 @@ const TourbillonAnimations = () => {
         if (currentlyHovered && !isHoveredWest.current) {
           isHoveredWest.current = true
           document.body.style.cursor = 'pointer'
-          setHoverTitle('MAD')
+          setHoverTitle('Food & Beverage')
           if (globalActions['GEARS']) gsap.to(globalActions['GEARS'], { timeScale: 0, duration: 1.5, ease: 'power2.out' })
           if (globalActions['TOPGEARS']) gsap.to(globalActions['TOPGEARS'], { timeScale: 0, duration: 1.5, ease: 'power2.out' })
         } else if (!currentlyHovered && isHoveredWest.current) {
@@ -1124,6 +1244,36 @@ const TourbillonAnimations = () => {
             innerMesh.rotation.x += delta * 3.25
           }
         }
+
+        const domeCollider = domeColliderRef.current
+        const domeMesh = explodedPiecesRef.current['AlquimiaTourbillonDome']
+        if (domeCollider) {
+          const hit = _raycaster.intersectObject(domeCollider, false).length > 0
+          if (hit && !isHoveredDome.current) {
+            isHoveredDome.current = true
+            document.body.style.cursor = 'pointer'
+            setTooltip({ text: 'The Store (Buy Nootropics)' })
+            waypointCameraState.hoveredObject = 'AlquimiaTourbillonDome'
+            if (domeMesh) {
+              gsap.killTweensOf(domeMesh.position)
+              gsap.to(domeMesh.position, { y: '+=0.03', duration: 1.5, yoyo: true, repeat: -1, ease: 'sine.inOut' })
+            }
+          } else if (!hit && isHoveredDome.current) {
+            isHoveredDome.current = false
+            document.body.style.cursor = 'auto'
+            setTooltip(null)
+            if (waypointCameraState.hoveredObject === 'AlquimiaTourbillonDome') {
+              waypointCameraState.hoveredObject = null
+            }
+            if (domeMesh) {
+              gsap.killTweensOf(domeMesh.position)
+              gsap.to(domeMesh.position, { y: 4.8, duration: 1.0, ease: 'power2.out' })
+            }
+          }
+          if (isHoveredDome.current && domeMesh) {
+            domeMesh.rotation.y += delta * 1.0
+          }
+        }
       }
 
       ;['AlquimiaCircleOuter', 'AlquimiaTriangle', 'AlquimiaCircleInner', 'AlquimiaSquare'].forEach(name => {
@@ -1192,10 +1342,12 @@ const TourbillonAnimations = () => {
 
     if (isExploded === 'south') {
       if (activeModal) {
-        if (isHoveredSouthOutter.current || isHoveredSouthInner.current || isHoveredSouthG4.current) {
+        if (isHoveredSouthOutter.current || isHoveredSouthInner.current || isHoveredSouthG4.current || isHoveredSouthG2.current || isHoveredSouthG3.current) {
           isHoveredSouthOutter.current = false
           isHoveredSouthInner.current = false
           isHoveredSouthG4.current = false
+          isHoveredSouthG2.current = false
+          isHoveredSouthG3.current = false
           waypointCameraState.hoveredObject = null
           setTooltip(null)
           document.body.style.cursor = 'auto'
@@ -1238,11 +1390,69 @@ const TourbillonAnimations = () => {
           }
         }
 
-        updateSouthPiece(southOutterColliderRef, isHoveredSouthOutter, 'TourbillonSouthOutter', 'THEsuites')
-        updateSouthPiece(southInnerColliderRef, isHoveredSouthInner, 'TourbillonSouthInner', 'THEadventures')
-        updateSouthPiece(southG4ColliderRef, isHoveredSouthG4, 'TourbillonSouthInnerG4', 'Events / General Info')
-        updateSouthPiece(southG2ColliderRef, isHoveredSouthG2, 'TourbillonSouthInnerG2', 'Events / General Info')
-        updateSouthPiece(southG3ColliderRef, isHoveredSouthG3, 'TourbillonSouthInnerG3', 'Events / General Info')
+        updateSouthPiece(southOutterColliderRef, isHoveredSouthOutter, 'TourbillonSouthOutter', 'Merch/Apparel')
+        updateSouthPiece(southInnerColliderRef, isHoveredSouthInner, 'TourbillonSouthInner', 'The Codex / Drunk GPT\'ing')
+        updateSouthPiece(southG4ColliderRef, isHoveredSouthG4, 'TourbillonSouthInnerG4', 'Sacred Symbols / Our Story')
+        updateSouthPiece(southG2ColliderRef, isHoveredSouthG2, 'TourbillonSouthInnerG2', 'Sacred Symbols / Our Story')
+        updateSouthPiece(southG3ColliderRef, isHoveredSouthG3, 'TourbillonSouthInnerG3', 'Sacred Symbols / Our Story')
+      }
+    }
+
+    if (isExploded === 'west') {
+      if (activeModal) {
+        if (isHoveredWestWeigth.current || isHoveredGear1.current || isHoveredG3.current || isHoveredG5.current || isHoveredG1.current) {
+          isHoveredWestWeigth.current = false
+          isHoveredGear1.current = false
+          isHoveredG3.current = false
+          isHoveredG5.current = false
+          isHoveredG1.current = false
+          waypointCameraState.hoveredObject = null
+          setTooltip(null)
+          document.body.style.cursor = 'auto'
+        }
+      } else {
+        _raycaster.setFromCamera(state.mouse, state.camera)
+
+        const updateWestPiece = (colliderRef, isHoveredRef, meshName, tooltipText) => {
+          const collider = colliderRef.current
+          const mesh = explodedPiecesRef.current[meshName]
+          if (collider && mesh) {
+            const hit = _raycaster.intersectObject(collider, false).length > 0
+
+            if (hit && !isHoveredRef.current) {
+              isHoveredRef.current = true
+              document.body.style.cursor = 'pointer'
+              setTooltip({ text: tooltipText })
+              waypointCameraState.hoveredObject = meshName
+              gsap.killTweensOf(mesh.position)
+              gsap.to(mesh.position, { y: '+=0.03', duration: 1.5, yoyo: true, repeat: -1, ease: 'sine.inOut' })
+              if (CHUNK_EXPLODE_TARGETS.includes(meshName) && mesh.material.userData.uChunkProgress) {
+                gsap.killTweensOf(mesh.material.userData.uChunkProgress)
+                gsap.to(mesh.material.userData.uChunkProgress, { value: 1.0, duration: 0.8, ease: 'power2.out' })
+              }
+            } else if (!hit && isHoveredRef.current) {
+              isHoveredRef.current = false
+              document.body.style.cursor = 'auto'
+              setTooltip(null)
+              if (waypointCameraState.hoveredObject === meshName) waypointCameraState.hoveredObject = null
+              if (mesh.userData.worldExplodedY !== undefined) {
+                gsap.killTweensOf(mesh.position)
+                gsap.to(mesh.position, { y: mesh.userData.worldExplodedY, duration: 1.0, ease: 'power2.out' })
+              }
+              if (CHUNK_EXPLODE_TARGETS.includes(meshName) && mesh.material.userData.uChunkProgress) {
+                gsap.killTweensOf(mesh.material.userData.uChunkProgress)
+                gsap.to(mesh.material.userData.uChunkProgress, { value: 0.0, duration: 0.8, ease: 'power2.out' })
+              }
+            }
+            if (isHoveredRef.current) mesh.rotation.y += delta * 1.0
+          }
+        }
+
+        updateWestPiece(westWeigthColliderRef, isHoveredWestWeigth, 'TourbillonWestWeigth', 'Menus & Reservations')
+        updateWestPiece(gear1ColliderRef, isHoveredGear1, 'Gear_1', 'THErestaurant')
+        updateWestPiece(g3ColliderRef, isHoveredG3, 'G3', 'THEbar & THEmartini-bar')
+        updateWestPiece(g5ColliderRef, isHoveredG5, 'G5', 'THEbag (Delivery/Sandwiches)')
+        updateWestPiece(g1ColliderRef, isHoveredG1, 'G1', 'THEcatering & Tastings')
       }
     }
   })
@@ -1264,6 +1474,9 @@ const TourbillonAnimations = () => {
         } else if (isHoveredSouth.current) {
           setExploded('south')
           document.body.style.cursor = 'auto'
+        } else if (isHoveredWest.current) {
+          setExploded('west')
+          document.body.style.cursor = 'auto'
         }
         return
       }
@@ -1278,56 +1491,75 @@ const TourbillonAnimations = () => {
           setActiveModal('science')
           return
         }
+        if (isHoveredDome.current) {
+          setActiveSection('events')
+          setActiveModal('nootropics')
+          return
+        }
       } else if (isExploded === 'north') {
         if (isHoveredNorthOutter.current) {
-          setActiveSection('bookroom')
-          setActiveModal('suites')
+          window.open('https://live.ipms247.com/booking/book-rooms-hotelherrera', '_blank', 'noopener,noreferrer')
           return
         }
         if (isHoveredNorthInner.current) {
-          setActiveSection('suites')
-          setActiveModal('adventures')
+          window.open('https://hotelherrera.com/suites-casco-viejo/', '_blank', 'noopener,noreferrer')
           return
         }
         if (isHoveredNorthG4.current) {
-          setActiveSection('events')
-          setActiveModal('events')
+          window.open('https://hotelherrera.com/the-reaping/', '_blank', 'noopener,noreferrer')
           return
         }
         if (isHoveredNorthG2.current) {
           setActiveSection('adventures')
-          setActiveModal('events')
+          setActiveModal('adventures_coming_soon')
           return
         }
         if (isHoveredNorthG3.current) {
-          setActiveSection('events')
-          setActiveModal('events')
+          window.open('https://hotelherrera.com/the-reaping/', '_blank', 'noopener,noreferrer')
           return
         }
       } else if (isExploded === 'south') {
         if (isHoveredSouthOutter.current) {
           setActiveSection('bookroom')
-          setActiveModal('suites')
+          setActiveModal('merch_apparel')
           return
         }
         if (isHoveredSouthInner.current) {
-          setActiveSection('suites')
-          setActiveModal('adventures')
+          window.open('https://hotelherrera.com/drunk-gpting/', '_blank', 'noopener,noreferrer')
           return
         }
         if (isHoveredSouthG4.current) {
-          setActiveSection('events')
-          setActiveModal('events')
+          window.open('https://hotelherrera.com/sacred-symbols/', '_blank', 'noopener,noreferrer')
           return
         }
         if (isHoveredSouthG2.current) {
-          setActiveSection('adventures')
-          setActiveModal('events')
+          window.open('https://hotelherrera.com/sacred-symbols/', '_blank', 'noopener,noreferrer')
           return
         }
         if (isHoveredSouthG3.current) {
-          setActiveSection('events')
-          setActiveModal('events')
+          window.open('https://hotelherrera.com/sacred-symbols/', '_blank', 'noopener,noreferrer')
+          return
+        }
+      } else if (isExploded === 'west') {
+        if (isHoveredWestWeigth.current) {
+          window.open('https://hotelherrera.com/elrestaurant-menu/', '_blank', 'noopener,noreferrer')
+          return
+        }
+        if (isHoveredGear1.current) {
+          window.open('https://hotelherrera.com/restaurant/', '_blank', 'noopener,noreferrer')
+          return
+        }
+        if (isHoveredG3.current) {
+          window.open('https://hotelherrera.com/themartinibar/', '_blank', 'noopener,noreferrer')
+          return
+        }
+        if (isHoveredG5.current) {
+          window.open('https://hotelherrera.com/thebag/', '_blank', 'noopener,noreferrer')
+          return
+        }
+        if (isHoveredG1.current) {
+          setActiveSection('catering')
+          setActiveModal('catering')
           return
         }
       }

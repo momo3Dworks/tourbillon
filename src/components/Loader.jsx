@@ -10,22 +10,21 @@ const Loader = ({ onStart }) => {
 
   useEffect(() => {
     if (progress === 100) {
-      const timer = setTimeout(() => setIsReady(true), 1000)
+      const timer = setTimeout(() => {
+        setIsReady(true)
+        gsap.to(overlayRef.current, {
+          opacity: 0,
+          duration: 1.0,
+          ease: 'power2.inOut',
+          onComplete: () => {
+            setVisible(false)
+            if (onStart) onStart()
+          }
+        })
+      }, 1000)
       return () => clearTimeout(timer)
     }
-  }, [progress])
-
-  const handleStart = () => {
-    gsap.to(overlayRef.current, {
-      opacity: 0,
-      duration: 1.0,
-      ease: 'power2.inOut',
-      onComplete: () => {
-        setVisible(false)
-        if (onStart) onStart()
-      }
-    })
-  }
+  }, [progress, onStart])
 
   if (!visible) return null
 
@@ -73,84 +72,6 @@ const Loader = ({ onStart }) => {
             style={{ transition: 'stroke-dashoffset 0.3s ease' }}
           />
         </svg>
-        <div style={{
-          position: 'absolute',
-          bottom: '20px',
-          color: 'var(--color-cyan)',
-          fontSize: '16px',
-          fontWeight: '300',
-          letterSpacing: '4px',
-          textShadow: '0 0 10px rgba(0, 255, 255, 0.5)'
-        }}>
-          {Math.round(progress)}%
-        </div>
-      </div>
-
-      <div style={{
-        marginTop: '60px',
-        textAlign: 'center',
-        color: '#00ffff',
-        display: 'flex',
-        flexDirection: 'column',
-        alignItems: 'center',
-        gap: '20px'
-      }}>
-        {isReady ? (
-          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '15px' }}>
-            <div style={{
-              letterSpacing: '8px',
-              fontSize: '14px',
-              textTransform: 'uppercase',
-              fontWeight: '400',
-              textShadow: '0 0 10px rgba(0, 255, 255, 0.5)'
-            }}>
-              ASSETS LOADED
-            </div>
-            <button
-              onClick={handleStart}
-              style={{
-                background: 'rgba(0, 255, 255, 0.05)',
-                border: '1px solid #00ffff',
-                color: '#00ffff',
-                padding: '15px 40px',
-                fontFamily: 'var(--font-primary)',
-                letterSpacing: '6px',
-                cursor: 'pointer',
-                fontSize: '14px',
-                borderRadius: '10rem',
-                textTransform: 'uppercase',
-                transition: 'all 0.4s cubic-bezier(0.23, 1, 0.32, 1)',
-                backdropFilter: 'blur(10px)',
-                boxShadow: '0 0 20px rgba(0, 255, 255, 0.1)'
-              }}
-              onMouseEnter={(e) => {
-                e.target.style.background = '#00ffff'
-                e.target.style.color = '#000'
-                e.target.style.boxShadow = '0 0 40px rgba(0, 255, 255, 0.6)'
-                e.target.style.letterSpacing = '10px'
-                e.target.style.transform = 'scale(1.05)'
-              }}
-              onMouseLeave={(e) => {
-                e.target.style.background = 'rgba(0, 255, 255, 0.05)'
-                e.target.style.color = '#00ffff'
-                e.target.style.boxShadow = '0 0 20px rgba(0, 255, 255, 0.1)'
-                e.target.style.letterSpacing = '6px'
-                e.target.style.transform = 'scale(1)'
-              }}
-            >
-              START
-            </button>
-          </div>
-        ) : (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-            <div style={{ letterSpacing: '6px', fontSize: '12px', textTransform: 'uppercase', opacity: 0.8, fontWeight: '300' }}>
-              TRANSMUTING SCENE
-            </div>
-            <div style={{ fontSize: '10px', opacity: 0.5, fontFamily: 'var(--font-mono)' }}>
-              Loading: {item ? item.split('/').pop() : 'Assets'} ({loaded}/{total})
-            </div>
-          </div>
-        )}
       </div>
     </div>
   )

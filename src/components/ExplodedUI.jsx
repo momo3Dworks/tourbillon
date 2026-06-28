@@ -1,5 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react'
 import { useExploded } from '../ExplodedContext'
+import { USE_AUTO_INTRO, triggerAutoIntro, triggerAutoBack } from '../CameraRig'
 
 // ─── Tooltip ────────────────────────────────────────────────────────────────
 const Tooltip = () => {
@@ -91,6 +92,22 @@ const InfoModal = () => {
     titleTop = 'Events'
     titleBottom = '/ General Info'
     sectionTag = 'Community'
+  } else if (activeModal === 'nootropics') {
+    titleTop = 'The Store'
+    titleBottom = '(Buy Nootropics)'
+    sectionTag = 'Coming Soon'
+  } else if (activeModal === 'adventures_coming_soon') {
+    titleTop = 'THEadventures'
+    titleBottom = ''
+    sectionTag = 'Coming Soon'
+  } else if (activeModal === 'merch_apparel') {
+    titleTop = 'Merch & Apparel'
+    titleBottom = ''
+    sectionTag = 'Coming Soon'
+  } else if (activeModal === 'catering') {
+    titleTop = 'THEcatering'
+    titleBottom = '& Tastings'
+    sectionTag = 'Coming Soon'
   }
 
   const isRight = isExploded === 'south'
@@ -252,17 +269,43 @@ const InfoModal = () => {
         }} />
 
         {/* Placeholder body */}
-        <p style={{
-          fontFamily: "'Inter', sans-serif",
-          fontSize: '13px',
-          color: 'rgba(255,255,255,0.4)',
-          letterSpacing: '0.8px',
-          lineHeight: '1.9',
-          margin: '0 0 auto 0',
-          maxWidth: '380px',
-        }}>
-          Content coming soon.
-        </p>
+        {['nootropics', 'adventures_coming_soon', 'merch_apparel', 'catering'].includes(activeModal) ? (
+          <div style={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            height: '100%',
+            background: 'rgba(0,255,255,0.05)',
+            border: '1px dashed rgba(0,255,255,0.3)',
+            borderRadius: '8px',
+            marginTop: '20px'
+          }}>
+            <h3 style={{
+              fontFamily: "'Inter', 'Outfit', sans-serif",
+              fontSize: '28px',
+              fontWeight: 400,
+              letterSpacing: '10px',
+              textTransform: 'uppercase',
+              color: '#00ffff',
+              textShadow: '0 0 20px rgba(0,255,255,0.8)',
+              textAlign: 'center'
+            }}>
+              COMING SOON
+            </h3>
+          </div>
+        ) : (
+          <p style={{
+            fontFamily: "'Inter', sans-serif",
+            fontSize: '13px',
+            color: 'rgba(255,255,255,0.4)',
+            letterSpacing: '0.8px',
+            lineHeight: '1.9',
+            margin: '0 0 auto 0',
+            maxWidth: '380px',
+          }}>
+            Content coming soon.
+          </p>
+        )}
 
         {/* Bottom CTA row */}
         <div style={{
@@ -354,45 +397,111 @@ const ExplodedUI = () => {
             userSelect: 'none',
           }}
         >
-          {isExploded === 'east' ? 'THEapothecary' : (isExploded === 'north' ? 'THEhotel' : 'THEstore')}
+          {isExploded === 'east' ? 'THEapothecary' : (isExploded === 'north' ? 'THEhotel' : (isExploded === 'south' ? 'THEstore' : 'Food & Beverage'))}
         </h1>
       </div>
 
       {/* ── Tooltip ───────────────────────────────────────── */}
       <Tooltip />
 
-      {/* ── Scroll Tooltip ────────────────────────────────── */}
-      <div
-        id="scroll-tooltip"
+      {/* ── Scroll Tooltip / Auto Intro Button ───────────────────────────── */}
+      {USE_AUTO_INTRO ? (
+        <button
+          id="scroll-tooltip"
+          onClick={() => {
+            triggerAutoIntro.current = true
+          }}
+          onMouseEnter={e => { e.currentTarget.style.boxShadow = '0 0 35px rgba(0,255,255,0.75)' }}
+          onMouseLeave={e => { e.currentTarget.style.boxShadow = '0 0 20px rgba(0,255,255,0.45)' }}
+          style={{
+            position: 'fixed',
+            bottom: '10vh',
+            left: '50%',
+            transform: 'translateX(-50%)',
+            padding: '12px 32px',
+            background: 'rgba(5, 15, 20, 0.85)',
+            border: '1px solid #00ffff',
+            color: '#00ffff',
+            cursor: 'pointer',
+            zIndex: 10,
+            boxShadow: '0 0 20px rgba(0, 255, 255, 0.45)',
+            fontFamily: "'Inter', 'Outfit', sans-serif",
+            fontSize: '13px',
+            letterSpacing: '2px',
+            textTransform: 'uppercase',
+            backdropFilter: 'blur(6px)',
+            transition: 'box-shadow 0.3s ease, opacity 0.3s ease',
+            pointerEvents: 'auto',
+            opacity: 1, // Will be controlled by CameraRig
+          }}
+        >
+          Meet The Tourbillon
+        </button>
+      ) : (
+        <div
+          id="scroll-tooltip"
+          style={{
+            position: 'fixed',
+            whiteSpace: 'nowrap',
+            backgroundColor: 'rgba(2, 70, 13, 0.4)',
+            padding: '8px 20px',
+            borderRadius: '5px',
+            borderLeft: '2px solid rgb(0, 255, 255)',
+            bottom: '10vh',
+            left: '50%',
+            transform: 'translateX(-50%)',
+            color: 'rgb(0, 255, 255)',
+            fontFamily: 'Outfit, sans-serif',
+            fontWeight: 300,
+            letterSpacing: '2px',
+            fontSize: '1rem',
+            width: 'auto',
+            textShadow: 'rgba(0, 255, 255, 0.6) 0px 0px 10px',
+            pointerEvents: 'none',
+            opacity: 1, // Will be controlled by CameraRig
+            transition: 'opacity 0.3s',
+            zIndex: 10,
+            display: 'flex',
+            alignItems: 'center',
+            gap: '12px',
+            backdropFilter: 'blur(10px)',
+          }}
+        >
+          Scroll down to meet THETourbillon
+        </div>
+      )}
+
+      {/* ── Back to Entrance Button ───────────────────────────── */}
+      <button
+        id="back-to-entrance-btn"
+        onClick={() => {
+          triggerAutoBack.current = true
+        }}
+        onMouseEnter={e => { e.currentTarget.style.boxShadow = '0 0 35px rgba(0,255,255,0.75)' }}
+        onMouseLeave={e => { e.currentTarget.style.boxShadow = '0 0 20px rgba(0,255,255,0.45)' }}
         style={{
           position: 'fixed',
-          whiteSpace: 'nowrap',
-          backgroundColor: 'rgba(2, 70, 13, 0.4)',
-          padding: '8px 20px',
-          borderRadius: '5px',
-          borderLeft: '2px solid rgb(0, 255, 255)',
-          bottom: '10vh',
-          left: '50%',
-          transform: 'translateX(-50%)',
-          color: 'rgb(0, 255, 255)',
-          fontFamily: 'Outfit, sans-serif',
-          fontWeight: 300,
-          letterSpacing: '2px',
-          fontSize: '1rem',
-          width: 'auto',
-          textShadow: 'rgba(0, 255, 255, 0.6) 0px 0px 10px',
-          pointerEvents: 'none',
-          opacity: 1, // Will be controlled by CameraRig
-          transition: 'opacity 0.3s',
+          bottom: '40px',
+          left: '40px',
+          padding: '12px 32px',
+          background: 'rgba(5, 15, 20, 0.85)',
+          border: '1px solid #00ffff',
+          color: '#00ffff',
+          cursor: 'pointer',
           zIndex: 10,
-          display: 'flex',
-          alignItems: 'center',
-          gap: '12px',
-          backdropFilter: 'blur(10px)',
+          boxShadow: '0 0 20px rgba(0, 255, 255, 0.45)',
+          fontFamily: "'Inter', 'Outfit', sans-serif",
+          fontSize: '13px',
+          letterSpacing: '2px',
+          textTransform: 'uppercase',
+          backdropFilter: 'blur(6px)',
+          transition: 'box-shadow 0.3s ease, opacity 0.3s ease',
+          pointerEvents: 'none',
+          opacity: 0, // Will be controlled by CameraRig
         }}
       >
-        Scroll down to meet THETourbillon
-      </div>
+        ↑ Back to Entrance
+      </button>
 
       {/* ── Hover Title Tooltip ───────────────────────────── */}
       <div
