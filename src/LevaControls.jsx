@@ -1,4 +1,5 @@
 import { useControls, folder } from 'leva'
+import { setVolumeVaultDoor, setVolumeTourbillonClick, setVolumeTourbillonProximity, setVolumeDoors } from './store/audioStore'
 
 /**
  * Central Leva configuration — returns all tunable scene parameters.
@@ -88,6 +89,42 @@ const useLevaControls = () => {
   // ── Environment ────────────────────────────────────────────────
   const envControls = useControls('Environment', {
     envIntensity: { value: 0.6, min: 0, max: 5, step: 0.1, label: 'IBL Intensity' },
+  })
+
+  // ── Audio Volumes ──────────────────────────────────────────────
+  useControls('Audio Volumes', {
+    volumeVaultDoor: {
+      value: 1.0,
+      min: 0,
+      max: 1.0,
+      step: 0.05,
+      label: 'Vault Door',
+      onChange: (val) => setVolumeVaultDoor(val),
+    },
+    volumeDoors: {
+      value: 1.0,
+      min: 0,
+      max: 1.0,
+      step: 0.05,
+      label: 'Tunnel Doors',
+      onChange: (val) => setVolumeDoors(val),
+    },
+    volumeTourbillonClick: {
+      value: 1.0,
+      min: 0,
+      max: 1.0,
+      step: 0.05,
+      label: 'Tourbillon Click',
+      onChange: (val) => setVolumeTourbillonClick(val),
+    },
+    volumeTourbillonProximity: {
+      value: 0.5,
+      min: 0,
+      max: 1.0,
+      step: 0.05,
+      label: 'Tourbillon Proximity',
+      onChange: (val) => setVolumeTourbillonProximity(val),
+    },
   })
 
   // ── SSR (Screen Space Reflections) ─────────────────────────────

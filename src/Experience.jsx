@@ -4,6 +4,7 @@ import SceneModels, { useAdvancedGLTF } from './SceneModels'
 import DoorAnimations from './DoorAnimations'
 import DomeAnimation from './DomeAnimation'
 import TourbillonAnimations from './TourbillonAnimations'
+import SpatialAudioController from './components/SpatialAudioController'
 import { useThree, useFrame } from '@react-three/fiber'
 
 // Three.js postprocessing passes
@@ -501,6 +502,7 @@ const Experience = () => {
       <DoorAnimations />
       <DomeAnimation />
       <TourbillonAnimations />
+      <SpatialAudioController />
     </>
   )
 }

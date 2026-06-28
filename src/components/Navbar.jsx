@@ -1,8 +1,10 @@
 import React, { useState } from 'react'
+import { useAudioStore, setPlayingAll } from '../store/audioStore'
 
 const Navbar = (props) => {
   const [isMenuOpen, setIsMenuOpen] = useState(false)
-  const [isPlaying, setIsPlaying] = useState(false)
+  const isPlaying = useAudioStore(s => s.isPlayingAll)
+  const setIsPlaying = setPlayingAll
   const [language, setLanguage] = useState('en')
 
   const waypoints = [

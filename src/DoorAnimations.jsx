@@ -3,7 +3,7 @@ import { useFrame, useThree } from '@react-three/fiber'
 import { useAnimations } from '@react-three/drei'
 import { useAdvancedGLTF } from './SceneModels'
 import * as THREE from 'three'
-
+import { audioStore } from './store/audioStore'
 // ─────────────────────────────────────────────────────────────────────────────
 // CONFIGURABLE DEBUGGING PARAMETERS
 // ─────────────────────────────────────────────────────────────────────────────
@@ -60,6 +60,18 @@ const DoorAnimations = () => {
   // Track the open/close state of each door
   // { 'Door 1': false, 'Door 2': false, ... }
   const doorStates = useRef({})
+  
+  // Track HTML Audio objects for each door
+  const doorAudios = useRef({})
+
+  useEffect(() => {
+    DOOR_CONFIG.forEach((door) => {
+      if (door.label !== 'Dome') {
+        const audio = new Audio('/DoorsOpened.mp3')
+        doorAudios.current[door.label] = audio
+      }
+    })
+  }, [])
 
   // Helper to play an action forwards (open) or backwards (close)
   const playActionDirection = (name, open) => {
@@ -106,11 +118,27 @@ const DoorAnimations = () => {
         door.actions.forEach((name) => playActionDirection(name, true))
         doorStates.current[door.label] = true
         console.log(`[DoorAnimations] Camera Y (${cameraY.toFixed(2)}) passed below triggerY (${door.triggerY}). Opening ${door.label}.`)
+        
+        // Reproducir audio una vez al abrir
+        if (door.label !== 'Dome' && doorAudios.current[door.label]) {
+          const audio = doorAudios.current[door.label]
+          audio.currentTime = 0
+          audio.play().catch(e => console.log('Audio play failed:', e))
+        }
       } else if (!isTriggered && wasOpen) {
         // Trigger closing
         door.actions.forEach((name) => playActionDirection(name, false))
         doorStates.current[door.label] = false
         console.log(`[DoorAnimations] Camera Y (${cameraY.toFixed(2)}) went above triggerY (${door.triggerY}). Closing ${door.label}.`)
+      }
+      
+      // Update volume per frame for playing audio based on proximity
+      if (door.label !== 'Dome' && doorAudios.current[door.label] && !doorAudios.current[door.label].paused) {
+        const { isPlayingAll, volumeDoors } = audioStore.getState()
+        const dist = Math.abs(cameraY - door.triggerY)
+        const maxDoorDist = 20.0
+        const factor = THREE.MathUtils.clamp(1.0 - (dist / maxDoorDist), 0, 1)
+        doorAudios.current[door.label].volume = volumeDoors * factor * (isPlayingAll ? 1 : 0)
       }
     })
   })
