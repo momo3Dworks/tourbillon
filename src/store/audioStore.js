@@ -8,6 +8,7 @@ let state = {
   volumeTourbillonProximity2: 0.3,
   volumeDoors: 0.0,
   volumeGearsRandom: 0.3,
+  activeNavIndex: 0,
 }
 
 const listeners = new Set()
@@ -41,3 +42,4 @@ export const setVolumeTourbillonProximity = (vol) => audioStore.setState({ volum
 export const setVolumeTourbillonProximity2 = (vol) => audioStore.setState({ volumeTourbillonProximity2: vol })
 export const setVolumeDoors = (vol) => audioStore.setState({ volumeDoors: vol })
 export const setVolumeGearsRandom = (vol) => audioStore.setState({ volumeGearsRandom: vol })
+export const setActiveNavIndex = (idx) => audioStore.setState({ activeNavIndex: idx })

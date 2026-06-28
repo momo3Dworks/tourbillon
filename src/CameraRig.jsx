@@ -1,6 +1,7 @@
 import { useRef, useEffect } from 'react'
 import { useFrame, useThree } from '@react-three/fiber'
 import * as THREE from 'three'
+import { audioStore } from './store/audioStore'
 
 // ─────────────────────────────────────────────────────────────────────────────
 // INTRO NAVIGATION MODE
@@ -314,6 +315,12 @@ const CameraRig = () => {
 
     // Sync global scroll progress
     scrollProgress.current = progress.current
+    
+    // Sync active nav index
+    const activeNavIdx = progress.current < 2.0 ? 0 : 1;
+    if (audioStore.getState().activeNavIndex !== activeNavIdx) {
+      audioStore.setState({ activeNavIndex: activeNavIdx })
+    }
 
     if (velocity.current !== 0) {
       console.log(`[CameraRig] progress: ${progress.current.toFixed(4)}, velocity: ${velocity.current.toFixed(6)}, cameraY: ${camera.position.y.toFixed(2)}`)

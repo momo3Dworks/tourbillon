@@ -1,18 +1,18 @@
 import React, { useState } from 'react'
 import { useAudioStore, setPlayingAll } from '../store/audioStore'
+import { triggerAutoIntro, triggerAutoBack } from '../CameraRig'
 
 const Navbar = (props) => {
   const [isMenuOpen, setIsMenuOpen] = useState(false)
+  const activeNavIndex = useAudioStore(s => s.activeNavIndex)
   const isPlaying = useAudioStore(s => s.isPlayingAll)
   const setIsPlaying = setPlayingAll
   const [language, setLanguage] = useState('en')
 
   const waypoints = [
-    { name: 'ENTRANCE', index: 0 },
-    { name: 'THE ARTIFACT', index: 1 },
-    { name: 'ARISE', index: 2 },
+    { name: 'ENTRANCE', index: 0, action: () => { triggerAutoBack.current = true; triggerAutoIntro.current = false } },
+    { name: 'THE TOURBILLON', index: 1, action: () => { triggerAutoIntro.current = true; triggerAutoBack.current = false } },
   ]
-  const targetScroll = 0
 
   return (
     <>
@@ -123,10 +123,11 @@ const Navbar = (props) => {
           {waypoints.map((wp) => (
             <button
               key={wp.index}
+              onClick={wp.action}
               style={{
                 background: 'none',
                 border: 'none',
-                color: targetScroll === wp.index ? 'var(--color-cyan)' : '#fff',
+                color: activeNavIndex === wp.index ? 'var(--color-cyan)' : '#fff',
                 fontFamily: 'var(--font-primary)',
                 fontSize: '12px',
                 letterSpacing: '2px',
@@ -134,18 +135,18 @@ const Navbar = (props) => {
                 position: 'relative',
                 padding: '10px 0',
                 transition: 'color 0.3s ease',
-                opacity: targetScroll === wp.index ? 1 : 0.6
+                opacity: activeNavIndex === wp.index ? 1 : 0.6
               }}
               onMouseEnter={(e) => { e.target.style.opacity = 1; e.target.style.color = 'var(--color-cyan)' }}
               onMouseLeave={(e) => {
-                if (targetScroll !== wp.index) {
+                if (activeNavIndex !== wp.index) {
                   e.target.style.opacity = 0.6;
                   e.target.style.color = '#fff'
                 }
               }}
             >
               {wp.name}
-              {targetScroll === wp.index && (
+              {activeNavIndex === wp.index && (
                 <span style={{
                   position: 'absolute',
                   bottom: 0,
@@ -197,17 +198,17 @@ const Navbar = (props) => {
             {waypoints.map((wp) => (
               <button
                 key={wp.index}
-                onClick={() => setIsMenuOpen(false)}
+                onClick={() => { wp.action(); setIsMenuOpen(false) }}
                 style={{
                   background: 'none',
                   border: 'none',
-                  color: targetScroll === wp.index ? 'var(--color-cyan)' : '#fff',
+                  color: activeNavIndex === wp.index ? 'var(--color-cyan)' : '#fff',
                   fontFamily: 'var(--font-primary)',
                   fontSize: '24px',
                   letterSpacing: '8px',
                   textTransform: 'uppercase',
                   cursor: 'pointer',
-                  opacity: targetScroll === wp.index ? 1 : 0.5,
+                  opacity: activeNavIndex === wp.index ? 1 : 0.5,
                   transition: 'all 0.3s ease'
                 }}
               >
