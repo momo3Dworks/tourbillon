@@ -1,5 +1,5 @@
 import { useControls, folder } from 'leva'
-import { setVolumeVaultDoor, setVolumeTourbillonClick, setVolumeTourbillonProximity, setVolumeDoors } from './store/audioStore'
+import { setVolumeVaultDoor, setVolumeTourbillonClick, setVolumeTourbillonProximity, setVolumeDoors, setVolumeTourbillonProximity2, setVolumeGearsRandom } from './store/audioStore'
 
 /**
  * Central Leva configuration — returns all tunable scene parameters.
@@ -124,6 +124,22 @@ const useLevaControls = () => {
       step: 0.05,
       label: 'Tourbillon Proximity',
       onChange: (val) => setVolumeTourbillonProximity(val),
+    },
+    volumeTourbillonProximity2: {
+      value: 0.3,
+      min: 0,
+      max: 1.0,
+      step: 0.05,
+      label: 'Tourbillon YT2 (9fsHGj9ZJFo)',
+      onChange: (val) => setVolumeTourbillonProximity2(val),
+    },
+    volumeGearsRandom: {
+      value: 0.4,
+      min: 0,
+      max: 1.0,
+      step: 0.05,
+      label: 'Gears Random',
+      onChange: (val) => setVolumeGearsRandom(val),
     },
   })
 

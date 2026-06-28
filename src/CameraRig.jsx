@@ -64,7 +64,7 @@ export const WAYPOINTS = [
   },
   {
     position: [3, 6, 3],
-    target: [0, 2.3, 0],
+    target: [0, 1, 0],
     fov: 60,
     dof: { focusDistance: 2.5, focalLength: 50, bokehScale: 8 },
   },
@@ -397,10 +397,10 @@ const CameraRig = () => {
       if (activeSection) {
         // Move to specific section focus point
         const targetWp = isExploded === 'east' ? EAST_SECTION_WAYPOINTS[activeSection] :
-                         isExploded === 'north' ? NORTH_SECTION_WAYPOINTS[activeSection] :
-                         isExploded === 'south' ? SOUTH_SECTION_WAYPOINTS[activeSection] :
-                         isExploded === 'west' ? WEST_SECTION_WAYPOINTS[activeSection] :
-                         null
+          isExploded === 'north' ? NORTH_SECTION_WAYPOINTS[activeSection] :
+            isExploded === 'south' ? SOUTH_SECTION_WAYPOINTS[activeSection] :
+              isExploded === 'west' ? WEST_SECTION_WAYPOINTS[activeSection] :
+                null
         if (targetWp) {
           targetPos = new THREE.Vector3(...targetWp.position)
           targetLookAt = new THREE.Vector3(...targetWp.target)

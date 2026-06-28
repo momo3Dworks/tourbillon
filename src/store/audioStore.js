@@ -5,7 +5,9 @@ let state = {
   volumeVaultDoor: 1.0,
   volumeTourbillonClick: 1.0,
   volumeTourbillonProximity: 0.5,
+  volumeTourbillonProximity2: 0.3,
   volumeDoors: 0.0,
+  volumeGearsRandom: 0.3,
 }
 
 const listeners = new Set()
@@ -36,4 +38,6 @@ export const setPlayingAll = (isPlaying) => audioStore.setState({ isPlayingAll: 
 export const setVolumeVaultDoor = (vol) => audioStore.setState({ volumeVaultDoor: vol })
 export const setVolumeTourbillonClick = (vol) => audioStore.setState({ volumeTourbillonClick: vol })
 export const setVolumeTourbillonProximity = (vol) => audioStore.setState({ volumeTourbillonProximity: vol })
+export const setVolumeTourbillonProximity2 = (vol) => audioStore.setState({ volumeTourbillonProximity2: vol })
 export const setVolumeDoors = (vol) => audioStore.setState({ volumeDoors: vol })
+export const setVolumeGearsRandom = (vol) => audioStore.setState({ volumeGearsRandom: vol })

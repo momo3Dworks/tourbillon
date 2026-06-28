@@ -37,21 +37,32 @@ const SpatialAudioController = () => {
   
   const clickPlayerRef = useRef(null)
   const proximityPlayerRef = useRef(null)
+  const proximityPlayer2Ref = useRef(null)
+  
   const clickPlayerReadyRef = useRef(false)
   const proximityPlayerReadyRef = useRef(false)
+  const proximityPlayer2ReadyRef = useRef(false)
+  
   const vaultAudioRef = useRef(null)
+  const gearsAudioRef = useRef(null)
   
   const prevAutoIntro = useRef(false)
   const hasTriggeredClickAudios = useRef(false)
 
-  // 1. Initialise local VaultDoor Audio
+  // 1. Initialise local Audio objects
   useEffect(() => {
     vaultAudioRef.current = new Audio('/VaultDoorOpen.mp3')
     vaultAudioRef.current.loop = false
     
+    gearsAudioRef.current = new Audio('/GearsSounds.mp3')
+    gearsAudioRef.current.loop = false
+    
     return () => {
       if (vaultAudioRef.current) {
         vaultAudioRef.current.pause()
+      }
+      if (gearsAudioRef.current) {
+        gearsAudioRef.current.pause()
       }
     }
   }, [])
@@ -118,12 +129,43 @@ const SpatialAudioController = () => {
           }
         }
       })
+        new window.YT.Player('yt-player-proximity2', {
+          height: '0',
+          width: '0',
+          videoId: '9fsHGj9ZJFo',
+          playerVars: {
+            autoplay: 0,
+            controls: 0,
+            disablekb: 1,
+            fs: 0,
+            rel: 0,
+            showinfo: 0,
+            modestbranding: 1,
+            loop: 1,
+            playlist: '9fsHGj9ZJFo' // Loop helper for iframe
+          },
+          events: {
+            onReady: (event) => {
+              const player = event.target
+              proximityPlayer2Ref.current = player
+              proximityPlayer2ReadyRef.current = true
+              // Cue/mute player
+              player.mute()
+              player.playVideo()
+              setTimeout(() => {
+                player.pauseVideo()
+                player.unMute()
+              }, 1000)
+            }
+          }
+        })
     })
 
     return () => {
       try {
         if (clickPlayerRef.current?.destroy) clickPlayerRef.current.destroy()
         if (proximityPlayerRef.current?.destroy) proximityPlayerRef.current.destroy()
+        if (proximityPlayer2Ref.current?.destroy) proximityPlayer2Ref.current.destroy()
       } catch (e) {
         console.error('Error destroying YouTube players:', e)
       }
@@ -178,7 +220,14 @@ const SpatialAudioController = () => {
     prevAutoIntro.current = isIntroActive
 
     // Get current global audio parameters
-    const { isPlayingAll, volumeVaultDoor, volumeTourbillonClick, volumeTourbillonProximity } = audioStore.getState()
+    const { 
+      isPlayingAll, 
+      volumeVaultDoor, 
+      volumeTourbillonClick, 
+      volumeTourbillonProximity,
+      volumeTourbillonProximity2,
+      volumeGearsRandom
+    } = audioStore.getState()
 
     const camPos = camera.position
     
@@ -247,12 +296,52 @@ const SpatialAudioController = () => {
         }
       }
     }
+
+    // D. Third YouTube Video (9fsHGj9ZJFo) - strictly proximity-based playback
+    const targetVolumeProximity2 = 1.0 * volumeTourbillonProximity2 * THREE.MathUtils.clamp(2.0 - distSystem / 100.0, 0, 1)
+
+    if (proximityPlayer2ReadyRef.current && proximityPlayer2Ref.current) {
+      if (typeof proximityPlayer2Ref.current.setVolume === 'function') {
+        proximityPlayer2Ref.current.setVolume(targetVolumeProximity2 * 100)
+      }
+      if (typeof proximityPlayer2Ref.current.getPlayerState === 'function') {
+        const stateVal = proximityPlayer2Ref.current.getPlayerState()
+        if (isPlayingAll && distSystem < proximityThreshold) {
+          if (stateVal !== 1 && typeof proximityPlayer2Ref.current.playVideo === 'function') {
+            proximityPlayer2Ref.current.playVideo()
+          }
+        } else {
+          if (stateVal === 1 && typeof proximityPlayer2Ref.current.pauseVideo === 'function') {
+            proximityPlayer2Ref.current.pauseVideo()
+          }
+        }
+      }
+    }
+
+    // E. GearsSounds.mp3 - Random playback when close to system
+    if (gearsAudioRef.current) {
+      gearsAudioRef.current.volume = volumeGearsRandom * THREE.MathUtils.clamp(2.0 - distSystem / 100.0, 0, 1) * (isPlayingAll ? 1 : 0)
+      
+      if (!isPlayingAll && !gearsAudioRef.current.paused) {
+        gearsAudioRef.current.pause()
+      } else if (isPlayingAll && distSystem < proximityThreshold) {
+        // Si está pausado/terminado, hay una probabilidad de iniciarlo
+        if (gearsAudioRef.current.paused) {
+          // 0.005 probabilidad por frame (~30% de chance por segundo a 60fps)
+          if (Math.random() < 0.005) {
+            gearsAudioRef.current.currentTime = 0
+            gearsAudioRef.current.play().catch(() => {})
+          }
+        }
+      }
+    }
   })
 
   return (
     <Html style={{ display: 'none' }} pointerEvents="none">
       <div id="yt-player-click"></div>
       <div id="yt-player-proximity"></div>
+      <div id="yt-player-proximity2"></div>
     </Html>
   )
 }
