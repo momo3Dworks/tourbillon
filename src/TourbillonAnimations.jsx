@@ -44,14 +44,14 @@ const EXPLODE_NORTH_PIECE_NAMES = [
   'TourbillonNorthOutter',
   'TourbillonNorthInner',
   'TourbillonNorthInnerG2',
-  'TourbillonNorthInnerG3',
+
   'TourbillonNorthInnerG4',
 ]
 const ANIMATED_NORTH_PIECE_NAMES = [
   'TourbillonNorthOutter',
   'TourbillonNorthInner',
   'TourbillonNorthInnerG2',
-  'TourbillonNorthInnerG3',
+
   'TourbillonNorthInnerG4',
 ]
 
@@ -614,7 +614,7 @@ const TourbillonAnimations = () => {
 
         }
         if (pieces['TourbillonNorthInnerG2']) {
-          gsap.to(pieces['TourbillonNorthInnerG2'].position, { x: mob(-1.9, 0), y: mob(5.2, 3), z: mob(6.5, 4), duration: 3.0, ease: 'power3.out' })
+          gsap.to(pieces['TourbillonNorthInnerG2'].position, { x: mob(-1.9, 0.8), y: mob(5.2, 3.2), z: mob(6.5, 4), duration: 3.0, ease: 'power3.out' })
           gsap.to(pieces['TourbillonNorthInnerG2'].rotation, {
             x: pieces['TourbillonNorthInnerG2'].userData.defaultRot.x,
             y: pieces['TourbillonNorthInnerG2'].userData.defaultRot.y + 5,
@@ -622,15 +622,7 @@ const TourbillonAnimations = () => {
             duration: 3.0, ease: 'power3.out',
           })
         }
-        if (pieces['TourbillonNorthInnerG3']) {
-          gsap.to(pieces['TourbillonNorthInnerG3'].position, { x: mob(-3.5, 1), y: mob(5.5, 3.5), z: mob(5.8, 4), duration: 3.5, ease: 'power3.out' })
-          gsap.to(pieces['TourbillonNorthInnerG3'].rotation, {
-            x: pieces['TourbillonNorthInnerG3'].userData.defaultRot.x,
-            y: pieces['TourbillonNorthInnerG3'].userData.defaultRot.y - 12,
-            z: pieces['TourbillonNorthInnerG3'].userData.defaultRot.z + 3,
-            duration: 3.3, ease: 'power3.out',
-          })
-        }
+
 
         // Do NOT modify their rotation so they keep their original orientation from Blender
 
@@ -860,7 +852,7 @@ const TourbillonAnimations = () => {
           buildCollider(pieces['TourbillonNorthInner'], northInnerColliderRef, 0.85)
           buildCollider(pieces['TourbillonNorthInnerG4'], northG4ColliderRef, 0.85)
           buildCollider(pieces['TourbillonNorthInnerG2'], northG2ColliderRef, 0.85)
-          buildCollider(pieces['TourbillonNorthInnerG3'], northG3ColliderRef, 0.85)
+
         } else if (isExploded === 'south') {
           buildCollider(pieces['TourbillonSouthOutter'], southOutterColliderRef, 0.85)
           buildCollider(pieces['TourbillonSouthInner'], southInnerColliderRef, 0.85)
@@ -1123,7 +1115,7 @@ const TourbillonAnimations = () => {
         if (currentlyHovered && !isHoveredSouth.current) {
           isHoveredSouth.current = true
           document.body.style.cursor = 'pointer'
-          setHoverTitle('THEstore')
+          setHoverTitle('MAD (The Philosophy / The Brand)')
           if (globalActions['GEARS']) gsap.to(globalActions['GEARS'], { timeScale: 0, duration: 1.5, ease: 'power2.out' })
           if (globalActions['TOPGEARS']) gsap.to(globalActions['TOPGEARS'], { timeScale: 0, duration: 1.5, ease: 'power2.out' })
         } else if (!currentlyHovered && isHoveredSouth.current) {
@@ -1432,7 +1424,7 @@ const TourbillonAnimations = () => {
         updateNorthPiece(northG2ColliderRef, isHoveredNorthG2, 'TourbillonNorthInnerG2', 'THEadventures')
 
         // Group G4 and G3 together
-        updateNorthGroup([northG4ColliderRef, northG3ColliderRef], isHoveredNorthG4, ['TourbillonNorthInnerG4', 'TourbillonNorthInnerG3'], 'Events / General Info')
+        updateNorthGroup([northG4ColliderRef, northG3ColliderRef], isHoveredNorthG4, ['TourbillonNorthInnerG4'], 'Events / General Info')
       }
     }
 
