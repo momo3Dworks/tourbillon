@@ -1,13 +1,14 @@
-import { useEffect, useRef, useCallback } from 'react'
+import React, { useEffect, useRef, useCallback, useState } from 'react'
 import { useControls } from 'leva'
-import { useFrame, useThree } from '@react-three/fiber'
+import { useFrame, useThree, createPortal } from '@react-three/fiber'
+import { Html } from '@react-three/drei'
 import { useAdvancedGLTF, globalActions } from './SceneModels'
 import * as THREE from 'three'
 import gsap from 'gsap'
 import { useExploded } from './ExplodedContext'
 import { waypointCameraState } from './CameraRig'
 import { applyChunkExplosion } from './utils/ChunkExplode'
-import { audioStore } from './store/audioStore'
+import { audioStore, useAudioStore } from './store/audioStore'
 
 // Helper: get value based on isMobile flag
 const mob = (desktopVal, mobileVal) => audioStore.getState().isMobile ? mobileVal : desktopVal
@@ -108,6 +109,31 @@ const ANIMATED_WEST_PIECE_NAMES = [
 
 const EXPLODE_ALL_PIECE_NAMES = [...EXPLODE_EAST_PIECE_NAMES, ...EXPLODE_NORTH_PIECE_NAMES, ...EXPLODE_SOUTH_PIECE_NAMES, ...EXPLODE_WEST_PIECE_NAMES]
 
+const EXPLODED_TOOLTIPS = {
+  // East
+  'AlquimiaCircleOuter': 'Alquimia Apothecary',
+  'InnerRingEast': 'The Science / Information',
+  'AlquimiaTourbillonDome': 'The Store (Buy Nootropics)',
+  // North
+  'TourbillonNorthOutter': 'Book a Room',
+  'TourbillonNorthInner': 'THEsuites',
+  'TourbillonNorthInnerG4': 'Events / General Info',
+  'TourbillonNorthInnerG2': 'THEadventures',
+
+  // South
+  'TourbillonSouthOutter': 'Merch/Apparel',
+  'TourbillonSouthInner': 'The Codex / Drunk GPT\'ing',
+  'TourbillonSouthInnerG4': 'Sacred Symbols / Our Story',
+  'TourbillonSouthInnerG2': 'Sacred Symbols / Our Story',
+  'TourbillonSouthInnerG3': 'Sacred Symbols / Our Story',
+  // West
+  'TourbillonWestWeigth': 'Menus & Reservations',
+  'Gear_1': 'THErestaurant',
+  'G3': 'THEbar & THEmartini-bar',
+  'G5': 'THEbag (Delivery/Sandwiches)',
+  'G1': 'THEcatering & Tastings'
+}
+
 // ─── Staggered sweep timing (duration and delay per group, in seconds) ─────────
 const EXPLODE_TIMING = {
   tunnelFloor: { duration: 2.5 },
@@ -143,6 +169,9 @@ const TourbillonAnimations = () => {
 
   const pivotRef = useRef(null)
   const triggered = useRef(false)
+
+  const [piecesReady, setPiecesReady] = useState(false)
+  const { isMobile } = useAudioStore()
 
   // Refs for hover / collider on TourbillonEast (no electric shader)
   const eastColliderRef = useRef(null)
@@ -409,6 +438,7 @@ const TourbillonAnimations = () => {
         }
       }
     })
+    setPiecesReady(true)
   }, [domeGltf])
 
   // ── Explode / Collapse animation ─────────────────────────────────────────
@@ -651,7 +681,7 @@ const TourbillonAnimations = () => {
         })
 
         if (pieces['TourbillonSouthOutter']) {
-          gsap.to(pieces['TourbillonSouthOutter'].position, { x: mob(0, 0), y: mob(4.8, 7.3), z: mob(4.8, 1), duration: 3.0, ease: 'power3.out' })
+          gsap.to(pieces['TourbillonSouthOutter'].position, { x: mob(0, 0), y: mob(4.8, 8), z: mob(4.8, -1), duration: 3.0, ease: 'power3.out' })
           gsap.to(pieces['TourbillonSouthOutter'].rotation, {
             x: pieces['TourbillonSouthOutter'].userData.defaultRot.x + 1,
             y: pieces['TourbillonSouthOutter'].userData.defaultRot.y,
@@ -660,7 +690,7 @@ const TourbillonAnimations = () => {
           })
         }
         if (pieces['TourbillonSouthInner']) {
-          gsap.to(pieces['TourbillonSouthInner'].position, { x: mob(3.4, 0.3), y: mob(4.8, 4.5), z: mob(4.8, 2), duration: 3.0, ease: 'power3.out' })
+          gsap.to(pieces['TourbillonSouthInner'].position, { x: mob(3.4, 0), y: mob(4.8, 5.5), z: mob(4.8, 1), duration: 3.0, ease: 'power3.out' })
           gsap.to(pieces['TourbillonSouthInner'].rotation, {
             x: pieces['TourbillonSouthInner'].userData.defaultRot.x + 1,
             y: pieces['TourbillonSouthInner'].userData.defaultRot.y,
@@ -669,7 +699,7 @@ const TourbillonAnimations = () => {
           })
         }
         if (pieces['TourbillonSouthInnerG4']) {
-          gsap.to(pieces['TourbillonSouthInnerG4'].position, { x: mob(-3.2, 1.2), y: mob(4.8, 2.8), z: mob(5.8, 2), duration: 2.8, ease: 'power3.out' })
+          gsap.to(pieces['TourbillonSouthInnerG4'].position, { x: mob(-3.2, 0.8), y: mob(4.8, 4), z: mob(5.8, 2), duration: 2.8, ease: 'power3.out' })
           gsap.to(pieces['TourbillonSouthInnerG4'].rotation, {
             x: pieces['TourbillonSouthInnerG4'].userData.defaultRot.x,
             y: pieces['TourbillonSouthInnerG4'].userData.defaultRot.y,
@@ -678,7 +708,7 @@ const TourbillonAnimations = () => {
           })
         }
         if (pieces['TourbillonSouthInnerG2']) {
-          gsap.to(pieces['TourbillonSouthInnerG2'].position, { x: mob(-2.3, 0), y: mob(4.8, 2.5), z: mob(5.8, 3), duration: 3.0, ease: 'power3.out' })
+          gsap.to(pieces['TourbillonSouthInnerG2'].position, { x: mob(-2.3, 0), y: mob(4.8, 2.7), z: mob(5.8, 3), duration: 3.0, ease: 'power3.out' })
           gsap.to(pieces['TourbillonSouthInnerG2'].rotation, {
             x: pieces['TourbillonSouthInnerG2'].userData.defaultRot.x,
             y: pieces['TourbillonSouthInnerG2'].userData.defaultRot.y + 7,
@@ -687,7 +717,7 @@ const TourbillonAnimations = () => {
           })
         }
         if (pieces['TourbillonSouthInnerG3']) {
-          gsap.to(pieces['TourbillonSouthInnerG3'].position, { x: mob(-3.5, -1), y: mob(5.4, 3.5), z: mob(5.8, 4), duration: 3.5, ease: 'power3.out' })
+          gsap.to(pieces['TourbillonSouthInnerG3'].position, { x: mob(-3.5, -0.5), y: mob(5.4, 3.8), z: mob(5.8, 4), duration: 3.5, ease: 'power3.out' })
           gsap.to(pieces['TourbillonSouthInnerG3'].rotation, {
             x: pieces['TourbillonSouthInnerG3'].userData.defaultRot.x,
             y: pieces['TourbillonSouthInnerG3'].userData.defaultRot.y - 12,
@@ -1345,11 +1375,64 @@ const TourbillonAnimations = () => {
           }
         }
 
+        const updateNorthGroup = (colliderRefs, isHoveredRef, meshNames, tooltipText) => {
+          let hit = false
+          for (let cRef of colliderRefs) {
+            if (cRef.current && _raycaster.intersectObject(cRef.current, false).length > 0) {
+              hit = true
+              break
+            }
+          }
+
+          if (hit && !isHoveredRef.current) {
+            isHoveredRef.current = true
+            document.body.style.cursor = 'pointer'
+            setTooltip({ text: tooltipText })
+            waypointCameraState.hoveredObject = meshNames[0]
+            meshNames.forEach(name => {
+              const m = explodedPiecesRef.current[name]
+              if (m) {
+                gsap.killTweensOf(m.position)
+                gsap.to(m.position, { y: '+=0.03', duration: 1.5, yoyo: true, repeat: -1, ease: 'sine.inOut' })
+                if (CHUNK_EXPLODE_TARGETS.includes(name) && m.material.userData.uChunkProgress) {
+                  gsap.killTweensOf(m.material.userData.uChunkProgress)
+                  gsap.to(m.material.userData.uChunkProgress, { value: 1.0, duration: 0.8, ease: 'power2.out' })
+                }
+              }
+            })
+          } else if (!hit && isHoveredRef.current) {
+            isHoveredRef.current = false
+            document.body.style.cursor = 'auto'
+            setTooltip(null)
+            if (waypointCameraState.hoveredObject === meshNames[0]) waypointCameraState.hoveredObject = null
+            meshNames.forEach(name => {
+              const m = explodedPiecesRef.current[name]
+              if (m) {
+                if (m.userData.worldExplodedY !== undefined) {
+                  gsap.killTweensOf(m.position)
+                  gsap.to(m.position, { y: m.userData.worldExplodedY, duration: 1.0, ease: 'power2.out' })
+                }
+                if (CHUNK_EXPLODE_TARGETS.includes(name) && m.material.userData.uChunkProgress) {
+                  gsap.killTweensOf(m.material.userData.uChunkProgress)
+                  gsap.to(m.material.userData.uChunkProgress, { value: 0.0, duration: 0.8, ease: 'power2.out' })
+                }
+              }
+            })
+          }
+          if (isHoveredRef.current) {
+            meshNames.forEach(name => {
+              const m = explodedPiecesRef.current[name]
+              if (m) m.rotation.y += delta * 1.0
+            })
+          }
+        }
+
         updateNorthPiece(northOutterColliderRef, isHoveredNorthOutter, 'TourbillonNorthOutter', 'Book a Room')
         updateNorthPiece(northInnerColliderRef, isHoveredNorthInner, 'TourbillonNorthInner', 'THEsuites')
-        updateNorthPiece(northG4ColliderRef, isHoveredNorthG4, 'TourbillonNorthInnerG4', 'Events / General Info')
         updateNorthPiece(northG2ColliderRef, isHoveredNorthG2, 'TourbillonNorthInnerG2', 'THEadventures')
-        updateNorthPiece(northG3ColliderRef, isHoveredNorthG3, 'TourbillonNorthInnerG3', 'Events / General Info')
+
+        // Group G4 and G3 together
+        updateNorthGroup([northG4ColliderRef, northG3ColliderRef], isHoveredNorthG4, ['TourbillonNorthInnerG4', 'TourbillonNorthInnerG3'], 'Events / General Info')
       }
     }
 
@@ -1403,11 +1486,63 @@ const TourbillonAnimations = () => {
           }
         }
 
+        const updateSouthGroup = (colliderRefs, isHoveredRef, meshNames, tooltipText) => {
+          let hit = false
+          for (let cRef of colliderRefs) {
+            if (cRef.current && _raycaster.intersectObject(cRef.current, false).length > 0) {
+              hit = true
+              break
+            }
+          }
+
+          if (hit && !isHoveredRef.current) {
+            isHoveredRef.current = true
+            document.body.style.cursor = 'pointer'
+            setTooltip({ text: tooltipText })
+            waypointCameraState.hoveredObject = meshNames[0]
+            meshNames.forEach(name => {
+              const m = explodedPiecesRef.current[name]
+              if (m) {
+                gsap.killTweensOf(m.position)
+                gsap.to(m.position, { y: '+=0.03', duration: 1.5, yoyo: true, repeat: -1, ease: 'sine.inOut' })
+                if (CHUNK_EXPLODE_TARGETS.includes(name) && m.material.userData.uChunkProgress) {
+                  gsap.killTweensOf(m.material.userData.uChunkProgress)
+                  gsap.to(m.material.userData.uChunkProgress, { value: 1.0, duration: 0.8, ease: 'power2.out' })
+                }
+              }
+            })
+          } else if (!hit && isHoveredRef.current) {
+            isHoveredRef.current = false
+            document.body.style.cursor = 'auto'
+            setTooltip(null)
+            if (waypointCameraState.hoveredObject === meshNames[0]) waypointCameraState.hoveredObject = null
+            meshNames.forEach(name => {
+              const m = explodedPiecesRef.current[name]
+              if (m) {
+                if (m.userData.worldExplodedY !== undefined) {
+                  gsap.killTweensOf(m.position)
+                  gsap.to(m.position, { y: m.userData.worldExplodedY, duration: 1.0, ease: 'power2.out' })
+                }
+                if (CHUNK_EXPLODE_TARGETS.includes(name) && m.material.userData.uChunkProgress) {
+                  gsap.killTweensOf(m.material.userData.uChunkProgress)
+                  gsap.to(m.material.userData.uChunkProgress, { value: 0.0, duration: 0.8, ease: 'power2.out' })
+                }
+              }
+            })
+          }
+          if (isHoveredRef.current) {
+            meshNames.forEach(name => {
+              const m = explodedPiecesRef.current[name]
+              if (m) m.rotation.y += delta * 1.0
+            })
+          }
+        }
+
         updateSouthPiece(southOutterColliderRef, isHoveredSouthOutter, 'TourbillonSouthOutter', 'Merch/Apparel')
         updateSouthPiece(southInnerColliderRef, isHoveredSouthInner, 'TourbillonSouthInner', 'The Codex / Drunk GPT\'ing')
-        updateSouthPiece(southG4ColliderRef, isHoveredSouthG4, 'TourbillonSouthInnerG4', 'Sacred Symbols / Our Story')
-        updateSouthPiece(southG2ColliderRef, isHoveredSouthG2, 'TourbillonSouthInnerG2', 'Sacred Symbols / Our Story')
-        updateSouthPiece(southG3ColliderRef, isHoveredSouthG3, 'TourbillonSouthInnerG3', 'Sacred Symbols / Our Story')
+
+        // Group G4, G2, and G3 together
+        updateSouthGroup([southG4ColliderRef, southG2ColliderRef, southG3ColliderRef], isHoveredSouthG4, ['TourbillonSouthInnerG4', 'TourbillonSouthInnerG2', 'TourbillonSouthInnerG3'], 'Sacred Symbols / Our Story')
       }
     }
 
@@ -1582,7 +1717,51 @@ const TourbillonAnimations = () => {
     return () => window.removeEventListener('click', onClick)
   }, [isExploded, activeModal, setExploded, setActiveModal, setActiveSection])
 
-  return null
+  return (
+    <>
+      {isMobile && piecesReady && isExploded && Object.entries(EXPLODED_TOOLTIPS).map(([pieceName, text]) => {
+        let isActive = false
+        if (isExploded === 'east' && EXPLODE_EAST_PIECE_NAMES.includes(pieceName)) isActive = true
+        if (isExploded === 'north' && EXPLODE_NORTH_PIECE_NAMES.includes(pieceName)) isActive = true
+        if (isExploded === 'south' && EXPLODE_SOUTH_PIECE_NAMES.includes(pieceName)) isActive = true
+        if (isExploded === 'west' && EXPLODE_WEST_PIECE_NAMES.includes(pieceName)) isActive = true
+
+        const mesh = explodedPiecesRef.current[pieceName]
+        if (!isActive || !mesh) return null
+
+        const fontSize = audioStore.getState().mobileTooltipFontSize
+
+        return (
+          <React.Fragment key={pieceName}>
+            {createPortal(
+              <Html
+                center
+                style={{
+                  background: 'rgba(5, 10, 18, 0.88)',
+                  border: '1px solid rgba(0,255,255,0.45)',
+                  borderRadius: '6px',
+                  padding: '7px 14px',
+                  color: '#00ffff',
+                  fontFamily: "'Inter', 'Outfit', sans-serif",
+                  fontSize: `${fontSize}px`,
+                  letterSpacing: '1px',
+                  textTransform: 'uppercase',
+                  backdropFilter: 'blur(8px)',
+                  boxShadow: '0 0 18px rgba(0,255,255,0.25)',
+                  whiteSpace: 'nowrap',
+                  pointerEvents: 'none',
+                  marginTop: '55px',
+                }}
+              >
+                {text}
+              </Html>,
+              mesh
+            )}
+          </React.Fragment>
+        )
+      })}
+    </>
+  )
 }
 
 export default TourbillonAnimations

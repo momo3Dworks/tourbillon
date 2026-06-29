@@ -1,6 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react'
 import { useExploded } from '../ExplodedContext'
 import { USE_AUTO_INTRO, triggerAutoIntro, triggerAutoBack } from '../CameraRig'
+import { useAudioStore } from '../store/audioStore'
 
 // ─── Tooltip ────────────────────────────────────────────────────────────────
 const Tooltip = () => {
@@ -20,7 +21,9 @@ const Tooltip = () => {
     return () => window.removeEventListener('mousemove', onMove)
   }, [])
 
-  if (!tooltip) return null
+  const { isMobile } = useAudioStore()
+
+  if (!tooltip || isMobile) return null
 
   return (
     <div
@@ -54,6 +57,7 @@ const Tooltip = () => {
 // ─── Left-Side Info Panel ────────────────────────────────────────────────────
 const InfoModal = () => {
   const { activeModal, setActiveModal, setActiveSection, isExploded } = useExploded()
+  const { isMobile } = useAudioStore()
   const [visible, setVisible] = useState(false)
 
   useEffect(() => {
@@ -121,7 +125,7 @@ const InfoModal = () => {
         left: isRight ? 'auto' : 0,
         right: isRight ? 0 : 'auto',
         bottom: 0,
-        width: '45vw',
+        width: isMobile ? '90vw' : '45vw',
         zIndex: 3000,
         pointerEvents: visible ? 'auto' : 'none',
         // subtle dark vignette on the panel side only

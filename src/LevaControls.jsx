@@ -1,5 +1,5 @@
 import { useControls, folder } from 'leva'
-import { setVolumeVaultDoor, setVolumeTourbillonClick, setVolumeTourbillonProximity, setVolumeDoors, setVolumeTourbillonProximity2, setVolumeGearsRandom } from './store/audioStore'
+import { setVolumeVaultDoor, setVolumeTourbillonClick, setVolumeTourbillonProximity, setVolumeDoors, setVolumeTourbillonProximity2, setVolumeGearsRandom, setMobileTooltipFontSize } from './store/audioStore'
 
 /**
  * Central Leva configuration — returns all tunable scene parameters.
@@ -140,6 +140,18 @@ const useLevaControls = () => {
       step: 0.05,
       label: 'Gears Random',
       onChange: (val) => setVolumeGearsRandom(val),
+    },
+  })
+
+  // ── Mobile ─────────────────────────────────────────────────────
+  useControls('Mobile', {
+    mobileTooltipFontSize: {
+      value: 9,
+      min: 6,
+      max: 20,
+      step: 0.5,
+      label: 'Tooltip Font Size (px)',
+      onChange: (val) => setMobileTooltipFontSize(val),
     },
   })
 
