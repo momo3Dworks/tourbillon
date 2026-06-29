@@ -7,6 +7,10 @@ import gsap from 'gsap'
 import { useExploded } from './ExplodedContext'
 import { waypointCameraState } from './CameraRig'
 import { applyChunkExplosion } from './utils/ChunkExplode'
+import { audioStore } from './store/audioStore'
+
+// Helper: get value based on isMobile flag
+const mob = (desktopVal, mobileVal) => audioStore.getState().isMobile ? mobileVal : desktopVal
 
 const _camPos = new THREE.Vector3()
 
@@ -502,7 +506,7 @@ const TourbillonAnimations = () => {
 
       if (isExploded === 'east') {
         if (pieces['AlquimiaTourbillonDome']) {
-          gsap.to(pieces['AlquimiaTourbillonDome'].position, { x: -0.05, y: 4.5, z: 6, duration: 3.0, ease: 'power3.out' })
+          gsap.to(pieces['AlquimiaTourbillonDome'].position, { x: mob(-0.05, 0), y: mob(4.5, 3), z: mob(6, 2), duration: 3.0, ease: 'power3.out' })
           gsap.to(pieces['AlquimiaTourbillonDome'].rotation, {
             x: pieces['AlquimiaTourbillonDome'].userData.defaultRot.x,
             y: pieces['AlquimiaTourbillonDome'].userData.defaultRot.y,
@@ -512,7 +516,7 @@ const TourbillonAnimations = () => {
         }
 
         if (pieces['InnerRingEast']) {
-          gsap.to(pieces['InnerRingEast'].position, { x: 2, y: 4.8, z: 7, duration: 2.0, ease: 'power3.out' })
+          gsap.to(pieces['InnerRingEast'].position, { x: mob(2, 1), y: mob(4.8, 7.5), z: mob(7, 1), duration: 2.0, ease: 'power3.out' })
           gsap.to(pieces['InnerRingEast'].rotation, {
             x: pieces['InnerRingEast'].userData.defaultRot.x,
             y: pieces['InnerRingEast'].userData.defaultRot.y,
@@ -537,7 +541,7 @@ const TourbillonAnimations = () => {
         })
 
         if (pieces['AlquimiaCircleOuter']) {
-          gsap.to(pieces['AlquimiaCircleOuter'].position, { x: -2, y: 4.8, z: 7, duration: 2.0, ease: 'power3.out' })
+          gsap.to(pieces['AlquimiaCircleOuter'].position, { x: mob(-2, -1), y: mob(4.8, 5.4), z: mob(7, 2), duration: 2.0, ease: 'power3.out' })
         }
       } else if (isExploded === 'north') {
         // North exploded animations (WORLD SPACE)
@@ -550,7 +554,7 @@ const TourbillonAnimations = () => {
         })
 
         if (pieces['TourbillonNorthOutter']) {
-          gsap.to(pieces['TourbillonNorthOutter'].position, { x: 0, y: 4.8, z: 4.8, duration: 3.0, ease: 'power3.out' })
+          gsap.to(pieces['TourbillonNorthOutter'].position, { x: mob(0, 0), y: mob(4.8, 7.3), z: mob(4.8, 1), duration: 3.0, ease: 'power3.out' })
           gsap.to(pieces['TourbillonNorthOutter'].rotation, {
             x: pieces['TourbillonNorthOutter'].userData.defaultRot.x + 1,
             y: pieces['TourbillonNorthOutter'].userData.defaultRot.y,
@@ -559,7 +563,7 @@ const TourbillonAnimations = () => {
           })
         }
         if (pieces['TourbillonNorthInner']) {
-          gsap.to(pieces['TourbillonNorthInner'].position, { x: 3.4, y: 4.8, z: 4.8, duration: 3.0, ease: 'power3.out' })
+          gsap.to(pieces['TourbillonNorthInner'].position, { x: mob(3.4, 1), y: mob(4.8, 4.8), z: mob(4.8, 2), duration: 3.0, ease: 'power3.out' })
           gsap.to(pieces['TourbillonNorthInner'].rotation, {
             x: pieces['TourbillonNorthInner'].userData.defaultRot.x + 1,
             y: pieces['TourbillonNorthInner'].userData.defaultRot.y,
@@ -568,7 +572,9 @@ const TourbillonAnimations = () => {
           })
         }
         if (pieces['TourbillonNorthInnerG4']) {
-          gsap.to(pieces['TourbillonNorthInnerG4'].position, { x: -3.2, y: 4.8, z: 5.8, duration: 2.8, ease: 'power3.out' })
+          gsap.to(pieces['TourbillonNorthInnerG4'].position, {
+            x: mob(-3.5, -1), y: mob(4.8, 3.5), z: mob(5.8, 2), duration: 2.8, ease: 'power3.out'
+          })
           gsap.to(pieces['TourbillonNorthInnerG4'].rotation, {
             x: pieces['TourbillonNorthInnerG4'].userData.defaultRot.x,
             y: pieces['TourbillonNorthInnerG4'].userData.defaultRot.y,
@@ -578,7 +584,7 @@ const TourbillonAnimations = () => {
 
         }
         if (pieces['TourbillonNorthInnerG2']) {
-          gsap.to(pieces['TourbillonNorthInnerG2'].position, { x: -1.9, y: 5.2, z: 6.5, duration: 3.0, ease: 'power3.out' })
+          gsap.to(pieces['TourbillonNorthInnerG2'].position, { x: mob(-1.9, 0), y: mob(5.2, 3), z: mob(6.5, 4), duration: 3.0, ease: 'power3.out' })
           gsap.to(pieces['TourbillonNorthInnerG2'].rotation, {
             x: pieces['TourbillonNorthInnerG2'].userData.defaultRot.x,
             y: pieces['TourbillonNorthInnerG2'].userData.defaultRot.y + 5,
@@ -587,7 +593,7 @@ const TourbillonAnimations = () => {
           })
         }
         if (pieces['TourbillonNorthInnerG3']) {
-          gsap.to(pieces['TourbillonNorthInnerG3'].position, { x: -3.5, y: 5.5, z: 5.8, duration: 3.5, ease: 'power3.out' })
+          gsap.to(pieces['TourbillonNorthInnerG3'].position, { x: mob(-3.5, 1), y: mob(5.5, 3.5), z: mob(5.8, 4), duration: 3.5, ease: 'power3.out' })
           gsap.to(pieces['TourbillonNorthInnerG3'].rotation, {
             x: pieces['TourbillonNorthInnerG3'].userData.defaultRot.x,
             y: pieces['TourbillonNorthInnerG3'].userData.defaultRot.y - 12,
@@ -645,7 +651,7 @@ const TourbillonAnimations = () => {
         })
 
         if (pieces['TourbillonSouthOutter']) {
-          gsap.to(pieces['TourbillonSouthOutter'].position, { x: 0, y: 4.8, z: 4.8, duration: 3.0, ease: 'power3.out' })
+          gsap.to(pieces['TourbillonSouthOutter'].position, { x: mob(0, 0), y: mob(4.8, 7.3), z: mob(4.8, 1), duration: 3.0, ease: 'power3.out' })
           gsap.to(pieces['TourbillonSouthOutter'].rotation, {
             x: pieces['TourbillonSouthOutter'].userData.defaultRot.x + 1,
             y: pieces['TourbillonSouthOutter'].userData.defaultRot.y,
@@ -654,7 +660,7 @@ const TourbillonAnimations = () => {
           })
         }
         if (pieces['TourbillonSouthInner']) {
-          gsap.to(pieces['TourbillonSouthInner'].position, { x: 3.4, y: 4.8, z: 4.8, duration: 3.0, ease: 'power3.out' })
+          gsap.to(pieces['TourbillonSouthInner'].position, { x: mob(3.4, 0.3), y: mob(4.8, 4.5), z: mob(4.8, 2), duration: 3.0, ease: 'power3.out' })
           gsap.to(pieces['TourbillonSouthInner'].rotation, {
             x: pieces['TourbillonSouthInner'].userData.defaultRot.x + 1,
             y: pieces['TourbillonSouthInner'].userData.defaultRot.y,
@@ -663,7 +669,7 @@ const TourbillonAnimations = () => {
           })
         }
         if (pieces['TourbillonSouthInnerG4']) {
-          gsap.to(pieces['TourbillonSouthInnerG4'].position, { x: -3.2, y: 4.8, z: 5.8, duration: 2.8, ease: 'power3.out' })
+          gsap.to(pieces['TourbillonSouthInnerG4'].position, { x: mob(-3.2, 1.2), y: mob(4.8, 2.8), z: mob(5.8, 2), duration: 2.8, ease: 'power3.out' })
           gsap.to(pieces['TourbillonSouthInnerG4'].rotation, {
             x: pieces['TourbillonSouthInnerG4'].userData.defaultRot.x,
             y: pieces['TourbillonSouthInnerG4'].userData.defaultRot.y,
@@ -672,7 +678,7 @@ const TourbillonAnimations = () => {
           })
         }
         if (pieces['TourbillonSouthInnerG2']) {
-          gsap.to(pieces['TourbillonSouthInnerG2'].position, { x: -2.3, y: 4.8, z: 5.8, duration: 3.0, ease: 'power3.out' })
+          gsap.to(pieces['TourbillonSouthInnerG2'].position, { x: mob(-2.3, 0), y: mob(4.8, 2.5), z: mob(5.8, 3), duration: 3.0, ease: 'power3.out' })
           gsap.to(pieces['TourbillonSouthInnerG2'].rotation, {
             x: pieces['TourbillonSouthInnerG2'].userData.defaultRot.x,
             y: pieces['TourbillonSouthInnerG2'].userData.defaultRot.y + 7,
@@ -681,7 +687,7 @@ const TourbillonAnimations = () => {
           })
         }
         if (pieces['TourbillonSouthInnerG3']) {
-          gsap.to(pieces['TourbillonSouthInnerG3'].position, { x: -3.5, y: 5.4, z: 5.8, duration: 3.5, ease: 'power3.out' })
+          gsap.to(pieces['TourbillonSouthInnerG3'].position, { x: mob(-3.5, -1), y: mob(5.4, 3.5), z: mob(5.8, 4), duration: 3.5, ease: 'power3.out' })
           gsap.to(pieces['TourbillonSouthInnerG3'].rotation, {
             x: pieces['TourbillonSouthInnerG3'].userData.defaultRot.x,
             y: pieces['TourbillonSouthInnerG3'].userData.defaultRot.y - 12,
@@ -745,7 +751,7 @@ const TourbillonAnimations = () => {
         })
 
         if (pieces['TourbillonWestWeigth']) {
-          gsap.to(pieces['TourbillonWestWeigth'].position, { x: 1, y: 4.8, z: 4.8, duration: 3.0, ease: 'power3.out' })
+          gsap.to(pieces['TourbillonWestWeigth'].position, { x: mob(1, 0.5), y: mob(4.8, 6.5), z: mob(4.8, 7), duration: 3.0, ease: 'power3.out' })
           gsap.to(pieces['TourbillonWestWeigth'].rotation, {
             x: pieces['TourbillonWestWeigth'].userData.defaultRot.x + 1,
             y: pieces['TourbillonWestWeigth'].userData.defaultRot.y + 1,
@@ -754,7 +760,7 @@ const TourbillonAnimations = () => {
           })
         }
         if (pieces['Gear_1']) {
-          gsap.to(pieces['Gear_1'].position, { x: 3, y: 4.8, z: 4.8, duration: 3.0, ease: 'power3.out' })
+          gsap.to(pieces['Gear_1'].position, { x: mob(3, 1.5), y: mob(4.8, 3.5), z: mob(4.8, 7), duration: 3.0, ease: 'power3.out' })
           gsap.to(pieces['Gear_1'].rotation, {
             x: pieces['Gear_1'].userData.defaultRot.x,
             y: pieces['Gear_1'].userData.defaultRot.y + 1.5,
@@ -763,7 +769,7 @@ const TourbillonAnimations = () => {
           })
         }
         if (pieces['G3']) {
-          gsap.to(pieces['G3'].position, { x: -2.5, y: 4.8, z: 5.8, duration: 2.8, ease: 'power3.out' })
+          gsap.to(pieces['G3'].position, { x: mob(-2.5, -1.2), y: mob(4.8, 5.8), z: mob(5.8, 7.5), duration: 2.8, ease: 'power3.out' })
           gsap.to(pieces['G3'].rotation, {
             x: pieces['G3'].userData.defaultRot.x + 5,
             y: pieces['G3'].userData.defaultRot.y + 1,
@@ -772,7 +778,7 @@ const TourbillonAnimations = () => {
           })
         }
         if (pieces['G5']) {
-          gsap.to(pieces['G5'].position, { x: -0.7, y: 4.8, z: 7.8, duration: 3.0, ease: 'power3.out' })
+          gsap.to(pieces['G5'].position, { x: mob(-0.7, -0.4), y: mob(4.8, 4.5), z: mob(7.8, 9.5), duration: 3.0, ease: 'power3.out' })
           gsap.to(pieces['G5'].rotation, {
             x: pieces['G5'].userData.defaultRot.x + 1,
             y: pieces['G5'].userData.defaultRot.y,
@@ -781,7 +787,7 @@ const TourbillonAnimations = () => {
           })
         }
         if (pieces['G1']) {
-          gsap.to(pieces['G1'].position, { x: -3.5, y: 5, z: 5.8, duration: 3.5, ease: 'power3.out' })
+          gsap.to(pieces['G1'].position, { x: mob(-3.5, -1.5), y: mob(5, 7), z: mob(5.8, 7.5), duration: 3.5, ease: 'power3.out' })
           gsap.to(pieces['G1'].rotation, {
             x: pieces['G1'].userData.defaultRot.x,
             y: pieces['G1'].userData.defaultRot.y + 2,

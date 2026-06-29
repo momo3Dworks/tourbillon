@@ -38,7 +38,7 @@ export const FRICTION = 0.1   // used as Math.pow(FRICTION, delta)
 // WAYPOINT CONFIGURATION — add more entries here as needed
 // Each waypoint: { position: [x, y, z], target: [x, y, z] }
 // ─────────────────────────────────────────────────────────────────────────────
-export const WAYPOINTS = [
+export const DESKTOP_WAYPOINTS = [
   {
     position: [0, 100, 0],
     target: [0, 0, 0],
@@ -84,6 +84,55 @@ export const WAYPOINTS = [
 
 ]
 
+
+export const MOBILE_WAYPOINTS = [
+  {
+    position: [0, 108, 0],
+    target: [0, 0, 0],
+    fov: 80,
+    dof: { focusDistance: 2.8, focalLength: 40, bokehScale: 10 },
+  },
+  {
+    position: [0, 70, 1],
+    target: [0, 0, 0],
+    fov: 60,
+    dof: { focusDistance: 6, focalLength: 23, bokehScale: 8 },
+  },
+  {
+    position: [0, 50, 1],
+    target: [0, 0, 0],
+    fov: 60,
+    dof: { focusDistance: 5, focalLength: 30, bokehScale: 7 },
+  },
+  {
+    position: [0, 10, 2],
+    target: [0, -5, 0],
+    fov: 60,
+    dof: { focusDistance: 5, focalLength: 100, bokehScale: 8 },
+  },
+  {
+    position: [3, 8, 9],
+    target: [0, 1, 0],
+    fov: 60,
+    dof: { focusDistance: 2.5, focalLength: 50, bokehScale: 8 },
+  },
+  {
+    position: [1, 5, 9],
+    target: [0, 0, 0],
+    fov: 60,
+    dof: { focusDistance: 0.1, focalLength: 60, bokehScale: 8 },
+  },
+  {
+    position: [-8, 3, 3],
+    target: [0, 0, 0],
+    fov: 98,
+    dof: { focusDistance: 5.0, focalLength: 55, bokehScale: 8 },
+  },
+
+]
+
+export const getWaypoints = (isMobile) => isMobile ? MOBILE_WAYPOINTS : DESKTOP_WAYPOINTS;
+
 export const scrollProgress = { current: -1.0 }
 
 // Shared mutable state updated every frame with interpolated per-waypoint camera values.
@@ -108,7 +157,7 @@ import { useControls } from 'leva'
 // Camera is positioned to the RIGHT so the left 45% viewport is free for the UI panel.
 // Tune these values in Leva or adjust directly here.
 // ────────────────────────────────────────────────────────────────────────────────
-export const NORTH_SECTION_WAYPOINTS = {
+export const DESKTOP_NORTH_SECTION_WAYPOINTS = {
   // Events — TourbillonNorthOutter / G3 / G4 area (left side of exploded layout)
   events: {
     position: [-2.5, 5, 6.8],
@@ -139,11 +188,17 @@ export const NORTH_SECTION_WAYPOINTS = {
   },
 }
 
+
+export const MOBILE_NORTH_SECTION_WAYPOINTS = Object.fromEntries(
+  Object.entries(DESKTOP_NORTH_SECTION_WAYPOINTS).map(([k, v]) => [k, { ...v, position: [v.position[0] * 1.2, v.position[1] * 1.2, v.position[2] * 1.5] }])
+)
+export const getNorthWaypoints = (isMobile) => isMobile ? MOBILE_NORTH_SECTION_WAYPOINTS : DESKTOP_NORTH_SECTION_WAYPOINTS;
+
 // ────────────────────────────────────────────────────────────────────────────────
 // SOUTH EXPLODED VIEW — Per-section camera waypoints
 // Camera is positioned to frame objects to the LEFT, leaving the right 45% for UI.
 // ────────────────────────────────────────────────────────────────────────────────
-export const SOUTH_SECTION_WAYPOINTS = {
+export const DESKTOP_SOUTH_SECTION_WAYPOINTS = {
   // Events — TourbillonSouthInnerG3 / G4 area (~ x: -3.2)
   events: {
     position: [-4.5, 5, 6.8],
@@ -174,10 +229,16 @@ export const SOUTH_SECTION_WAYPOINTS = {
   },
 }
 
+
+export const MOBILE_SOUTH_SECTION_WAYPOINTS = Object.fromEntries(
+  Object.entries(DESKTOP_SOUTH_SECTION_WAYPOINTS).map(([k, v]) => [k, { ...v, position: [v.position[0] * 1.2, v.position[1] * 1.2, v.position[2] * 1.5] }])
+)
+export const getSouthWaypoints = (isMobile) => isMobile ? MOBILE_SOUTH_SECTION_WAYPOINTS : DESKTOP_SOUTH_SECTION_WAYPOINTS;
+
 // ────────────────────────────────────────────────────────────────────────────────
 // WEST EXPLODED VIEW — Per-section camera waypoints
 // ────────────────────────────────────────────────────────────────────────────────
-export const WEST_SECTION_WAYPOINTS = {
+export const DESKTOP_WEST_SECTION_WAYPOINTS = {
   catering: {
     position: [2.5, 6, 6.8],
     target: [-3, 5, 4],
@@ -185,6 +246,50 @@ export const WEST_SECTION_WAYPOINTS = {
     dof: { focusDistance: 1, focalLength: 80, bokehScale: 5 },
   },
 }
+
+
+export const MOBILE_WEST_SECTION_WAYPOINTS = Object.fromEntries(
+  Object.entries(DESKTOP_WEST_SECTION_WAYPOINTS).map(([k, v]) => [k, { ...v, position: [v.position[0] * 1.2, v.position[1] * 1.2, v.position[2] * 1.5] }])
+)
+export const getWestWaypoints = (isMobile) => isMobile ? MOBILE_WEST_SECTION_WAYPOINTS : DESKTOP_WEST_SECTION_WAYPOINTS;
+
+// ────────────────────────────────────────────────────────────────────────────────
+// EAST EXPLODED VIEW — Per-section camera waypoints
+// ────────────────────────────────────────────────────────────────────────────────
+export const DESKTOP_EAST_SECTION_WAYPOINTS = {
+  events: {
+    position: [4, 5, 6.8],
+    target: [0, 5, 2],
+    fov: 60,
+    dof: { focusDistance: 0.1, focalLength: 48, bokehScale: 6 },
+  },
+  adventures: {
+    position: [3, 5.1, 7.5],
+    target: [0, 5, 2],
+    fov: 60,
+    dof: { focusDistance: 0.5, focalLength: 100, bokehScale: 6 },
+  },
+  bookroom: {
+    position: [2, 4.8, 7.2],
+    target: [0, 5, 2],
+    fov: 60,
+    dof: { focusDistance: 1, focalLength: 100, bokehScale: 5 },
+  },
+  suites: {
+    position: [3.5, 6.5, 6],
+    target: [0, 5, 4.8],
+    fov: 60,
+    dof: { focusDistance: 10, focalLength: 10, bokehScale: 6 },
+  },
+}
+
+export const MOBILE_EAST_SECTION_WAYPOINTS = Object.fromEntries(
+  Object.entries(DESKTOP_EAST_SECTION_WAYPOINTS).map(([k, v]) => [k, { ...v, position: [v.position[0] * 1.2, v.position[1] * 1.2, v.position[2] * 1.5] }])
+)
+export const getEastWaypoints = (isMobile) => isMobile ? MOBILE_EAST_SECTION_WAYPOINTS : DESKTOP_EAST_SECTION_WAYPOINTS;
+
+// Backward-compatible alias (used in App.jsx)
+export const WAYPOINTS = DESKTOP_WAYPOINTS;
 
 const lerp3 = (a, b, t) => new THREE.Vector3(...a).lerp(new THREE.Vector3(...b), t)
 
@@ -224,7 +329,7 @@ const CameraRig = () => {
 
   useEffect(() => {
     // Set camera to first waypoint immediately
-    const wp = WAYPOINTS[0]
+    const wp = DESKTOP_WAYPOINTS[0]
     camera.position.set(...wp.position)
     camera.lookAt(...wp.target)
     currentLookAt.current.set(...wp.target)
@@ -268,7 +373,9 @@ const CameraRig = () => {
   }, [])
 
   useFrame((state, delta) => {
-    const maxIdx = WAYPOINTS.length - 1
+    const isMobileNow = audioStore.getState().isMobile
+    const waypointsList = getWaypoints(isMobileNow)
+    const maxIdx = waypointsList.length - 1
 
     // Apply friction — frame-rate independent
     const friction = Math.pow(FRICTION, delta)
@@ -315,7 +422,7 @@ const CameraRig = () => {
 
     // Sync global scroll progress
     scrollProgress.current = progress.current
-    
+
     // Sync active nav index
     const activeNavIdx = progress.current < 2.0 ? 0 : 1;
     if (audioStore.getState().activeNavIndex !== activeNavIdx) {
@@ -362,7 +469,7 @@ const CameraRig = () => {
     const DEFAULT_DOF = { focusDistance: 4.5, focalLength: 34.7, bokehScale: 1.7 }
 
     if (progress.current <= 0) {
-      const wp = WAYPOINTS[0]
+      const wp = waypointsList[0]
       targetPos = new THREE.Vector3(...wp.position)
       targetLookAt = new THREE.Vector3(...wp.target)
       const d = wp.dof || DEFAULT_DOF
@@ -379,8 +486,8 @@ const CameraRig = () => {
       // Ease t with smoothstep for extra softness at endpoints
       const et = t * t * (3 - 2 * t)
 
-      const wpA = WAYPOINTS[lower]
-      const wpB = WAYPOINTS[upper]
+      const wpA = waypointsList[lower]
+      const wpB = waypointsList[upper]
       const dA = wpA.dof || DEFAULT_DOF
       const dB = wpB.dof || DEFAULT_DOF
 
@@ -403,10 +510,10 @@ const CameraRig = () => {
       // Per-section waypoints — override generic exploded camera
       if (activeSection) {
         // Move to specific section focus point
-        const targetWp = isExploded === 'east' ? EAST_SECTION_WAYPOINTS[activeSection] :
-          isExploded === 'north' ? NORTH_SECTION_WAYPOINTS[activeSection] :
-            isExploded === 'south' ? SOUTH_SECTION_WAYPOINTS[activeSection] :
-              isExploded === 'west' ? WEST_SECTION_WAYPOINTS[activeSection] :
+        const targetWp = isExploded === 'east' ? getEastWaypoints(isMobileNow)[activeSection] :
+          isExploded === 'north' ? getNorthWaypoints(isMobileNow)[activeSection] :
+            isExploded === 'south' ? getSouthWaypoints(isMobileNow)[activeSection] :
+              isExploded === 'west' ? getWestWaypoints(isMobileNow)[activeSection] :
                 null
         if (targetWp) {
           targetPos = new THREE.Vector3(...targetWp.position)

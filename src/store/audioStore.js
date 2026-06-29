@@ -9,6 +9,7 @@ let state = {
   volumeDoors: 0.0,
   volumeGearsRandom: 0.3,
   activeNavIndex: 0,
+  isMobile: false,
 }
 
 const listeners = new Set()
@@ -43,3 +44,4 @@ export const setVolumeTourbillonProximity2 = (vol) => audioStore.setState({ volu
 export const setVolumeDoors = (vol) => audioStore.setState({ volumeDoors: vol })
 export const setVolumeGearsRandom = (vol) => audioStore.setState({ volumeGearsRandom: vol })
 export const setActiveNavIndex = (idx) => audioStore.setState({ activeNavIndex: idx })
+export const setIsMobile = (isMobile) => audioStore.setState({ isMobile })

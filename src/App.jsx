@@ -9,6 +9,7 @@ import { Leva } from 'leva'
 
 import { useExploded } from './ExplodedContext'
 import ExplodedUI from './components/ExplodedUI'
+import { setIsMobile as setGlobalIsMobile } from './store/audioStore'
 
 import './index.css'
 
@@ -74,6 +75,10 @@ function App() {
       dpr: mobile ? Math.min(window.devicePixelRatio, 0.75) : Math.min(window.devicePixelRatio, 0.95)
     }
   }, [])
+  
+  useEffect(() => {
+    setGlobalIsMobile(isMobile)
+  }, [isMobile])
 
   return (
     <div style={{ width: '100vw', height: '100vh', position: 'relative', background: '#000' }}>
@@ -96,7 +101,7 @@ function App() {
         frameloop={(ready && hasStarted) ? 'always' : 'never'}
       >
         {/* Camera starts at waypoint 0 position. FOV 80 for mobile, 60 for desktop */}
-        <PerspectiveCamera makeDefault position={WAYPOINTS[0].position} fov={isMobile ? 80 : 60} near={0.1} far={1000} />
+        <PerspectiveCamera makeDefault position={WAYPOINTS[0].position} fov={isMobile ? 110 : 60} near={0.1} far={1000} />
         <color attach="background" args={['#050510']} />
 
         {/* Scroll-driven smooth camera rig */}
