@@ -751,7 +751,7 @@ const TourbillonAnimations = () => {
         })
 
         if (pieces['TourbillonWestWeigth']) {
-          gsap.to(pieces['TourbillonWestWeigth'].position, { x: mob(1, 0.5), y: mob(4.8, 6.5), z: mob(4.8, 7), duration: 3.0, ease: 'power3.out' })
+          gsap.to(pieces['TourbillonWestWeigth'].position, { x: mob(1, 0.5), y: mob(4.8, 7.5), z: mob(4.8, 2), duration: 3.0, ease: 'power3.out' })
           gsap.to(pieces['TourbillonWestWeigth'].rotation, {
             x: pieces['TourbillonWestWeigth'].userData.defaultRot.x + 1,
             y: pieces['TourbillonWestWeigth'].userData.defaultRot.y + 1,
@@ -760,7 +760,7 @@ const TourbillonAnimations = () => {
           })
         }
         if (pieces['Gear_1']) {
-          gsap.to(pieces['Gear_1'].position, { x: mob(3, 1.5), y: mob(4.8, 3.5), z: mob(4.8, 7), duration: 3.0, ease: 'power3.out' })
+          gsap.to(pieces['Gear_1'].position, { x: mob(3, 1), y: mob(4.8, 2.8), z: mob(4.8, 3), duration: 3.0, ease: 'power3.out' })
           gsap.to(pieces['Gear_1'].rotation, {
             x: pieces['Gear_1'].userData.defaultRot.x,
             y: pieces['Gear_1'].userData.defaultRot.y + 1.5,
@@ -769,7 +769,7 @@ const TourbillonAnimations = () => {
           })
         }
         if (pieces['G3']) {
-          gsap.to(pieces['G3'].position, { x: mob(-2.5, -1.2), y: mob(4.8, 5.8), z: mob(5.8, 7.5), duration: 2.8, ease: 'power3.out' })
+          gsap.to(pieces['G3'].position, { x: mob(-2.5, -1.2), y: mob(4.8, 6), z: mob(5.8, 3), duration: 2.8, ease: 'power3.out' })
           gsap.to(pieces['G3'].rotation, {
             x: pieces['G3'].userData.defaultRot.x + 5,
             y: pieces['G3'].userData.defaultRot.y + 1,
@@ -778,7 +778,7 @@ const TourbillonAnimations = () => {
           })
         }
         if (pieces['G5']) {
-          gsap.to(pieces['G5'].position, { x: mob(-0.7, -0.4), y: mob(4.8, 4.5), z: mob(7.8, 9.5), duration: 3.0, ease: 'power3.out' })
+          gsap.to(pieces['G5'].position, { x: mob(-0.7, -0.4), y: mob(4.8, 4.5), z: mob(7.8, 6), duration: 3.0, ease: 'power3.out' })
           gsap.to(pieces['G5'].rotation, {
             x: pieces['G5'].userData.defaultRot.x + 1,
             y: pieces['G5'].userData.defaultRot.y,
@@ -787,7 +787,7 @@ const TourbillonAnimations = () => {
           })
         }
         if (pieces['G1']) {
-          gsap.to(pieces['G1'].position, { x: mob(-3.5, -1.5), y: mob(5, 7), z: mob(5.8, 7.5), duration: 3.5, ease: 'power3.out' })
+          gsap.to(pieces['G1'].position, { x: mob(-3.5, -1), y: mob(5, 5), z: mob(5.8, 2), duration: 3.5, ease: 'power3.out' })
           gsap.to(pieces['G1'].rotation, {
             x: pieces['G1'].userData.defaultRot.x,
             y: pieces['G1'].userData.defaultRot.y + 2,
@@ -1125,6 +1125,13 @@ const TourbillonAnimations = () => {
           if (globalActions['TOPGEARS']) gsap.to(globalActions['TOPGEARS'], { timeScale: 1, duration: 1.5, ease: 'power2.in' })
         }
       }
+    } else {
+      // If we are in an exploded view, force reset all unexploded hover refs
+      // This prevents accidental clicks when clicking the "Back" button
+      if (isHoveredEast.current) isHoveredEast.current = false
+      if (isHoveredNorth.current) isHoveredNorth.current = false
+      if (isHoveredSouth.current) isHoveredSouth.current = false
+      if (isHoveredWest.current) isHoveredWest.current = false
     }
 
     if (isExploded === 'east') {
@@ -1465,7 +1472,8 @@ const TourbillonAnimations = () => {
 
   // ── Click handler ─────────────────────────────────────────────────────────
   useEffect(() => {
-    const onClick = () => {
+    const onClick = (e) => {
+      if (e.target.tagName !== 'CANVAS') return
       if (activeModal) {
         return
       }
