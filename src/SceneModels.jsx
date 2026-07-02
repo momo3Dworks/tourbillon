@@ -177,8 +177,8 @@ const SceneModels = ({
       Element03: 179,
       Element02: 579,
       Element01: 771,
-      AlquimiaTriangle: 162,
-      AlquimiaCircleInner: 95,
+      AlquimiaTriangle: 155,
+      AlquimiaCircleInner: 217,
       AlquimiaSquare: 59,
       PinWest: 350,
       G3_2: 350,
@@ -186,12 +186,18 @@ const SceneModels = ({
       G1_1: 240,
       G1_2: 240,
       G5_2: 227,
-      Gear_1: 240,
+      Gear_1: 363,
+      Gear_Inner: 363,
       G4: 243,
       G1: 202,
       G5: 202,
       TourbillonWestWeigth: 628,
+      TourbillonWestCycles: 7,
+      WestSpiralGadget: 7,
       PinSouth: 840,
+      TourbillonEastInnerG4_PinEast: 232,
+      Triangle2: 155,
+      InnerCircle2: 217,
     }
 
     // Expose all original actions to the global registry
@@ -273,7 +279,7 @@ const SceneModels = ({
 
   }, [actions, allAnimations, mixer])
 
-  const { progressTunnelFloor, progressCrystals, progressDome, progressSystem } = useExploded()
+  const { progressTunnelFloor, progressCrystals, progressDome, progressSystem, progressUnified } = useExploded()
 
   // Process Doors_camera to swap Y and Z
   const extractedCamera = useMemo(() => {
@@ -356,15 +362,16 @@ const SceneModels = ({
     })
 
     // ── PASS 2: Inject GridTransition shader on all non-protected meshes ───────
+    // All groups point to progressUnified — a single ref drives the entire scene in unison.
     const SCENE_GROUPS = [
-      { scn: tunnelFloor.scene, progressRef: progressTunnelFloor },
-      { scn: tunnelLights.scene, progressRef: progressCrystals },
-      { scn: crystals.scene, progressRef: progressCrystals },
-      { scn: doorsCamera.scene, progressRef: progressCrystals },
-      { scn: vaultDoor.scene, progressRef: progressCrystals },
-      { scn: TopGears.scene, progressRef: progressCrystals },
-      { scn: tourbillonDome.scene, progressRef: progressDome },
-      { scn: tourbillonSystem.scene, progressRef: progressSystem },
+      { scn: tunnelFloor.scene, progressRef: progressUnified },
+      { scn: tunnelLights.scene, progressRef: progressUnified },
+      { scn: crystals.scene, progressRef: progressUnified },
+      { scn: doorsCamera.scene, progressRef: progressUnified },
+      { scn: vaultDoor.scene, progressRef: progressUnified },
+      { scn: TopGears.scene, progressRef: progressUnified },
+      { scn: tourbillonDome.scene, progressRef: progressUnified },
+      { scn: tourbillonSystem.scene, progressRef: progressUnified },
     ]
 
     SCENE_GROUPS.forEach(({ scn, progressRef }) => {
@@ -548,7 +555,7 @@ const SceneModels = ({
       vaultAction.time = t * vaultAction.getClip().duration
     }
 
-    // 3. Update GridTransition shader uniforms per group
+    // 3. Update GridTransition shader uniforms — single unified progress drives all groups simultaneously
     const SCENE_GROUPS_FRAME = [
       tunnelFloor.scene,
       tunnelLights.scene,
@@ -564,13 +571,11 @@ const SceneModels = ({
         if (child.isMesh && child.material) {
           const mats = Array.isArray(child.material) ? child.material : [child.material]
           mats.forEach((mat) => {
-            // gridTransitionProtected is set on cloned exploded-piece materials — never drive them
             if (mat.userData.gridTransitionProtected) return
             if (mat.userData.shader && mat.userData.shader.uniforms.uTransitionProgress) {
-              const ref = mat.userData.groupProgressRef
-              const progress = ref ? ref.current : 0.0
-              mat.userData.shader.uniforms.uTransitionProgress.value = progress
-              mat.transparent = progress > 0.001 || !!mat.userData.originalTransparent
+              // Always read progressUnified — all meshes dissolve at the same moment
+              mat.userData.shader.uniforms.uTransitionProgress.value = progressUnified.current
+              mat.transparent = progressUnified.current > 0.001 || !!mat.userData.originalTransparent
             }
           })
         }

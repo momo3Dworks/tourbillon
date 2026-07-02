@@ -40,8 +40,8 @@ const useLevaControls = () => {
   // ── Chromatic Aberration ───────────────────────────────────────
   const caControls = useControls('Chromatic Aberration', {
     enabled: { value: true, label: 'Enabled' },
-    amount: { value: 0.01, min: 0, max: 0.05, step: 0.001, label: 'Max Amount' },
-    falloff: { value: 4.3, min: 0.5, max: 5.0, step: 0.1, label: 'Falloff Power' },
+    amount: { value: 0.005, min: 0, max: 0.05, step: 0.001, label: 'Max Amount' },
+    falloff: { value: 2, min: 0.5, max: 5.0, step: 0.1, label: 'Falloff Power' },
   })
 
   // ── Directional Light ──────────────────────────────────────────
