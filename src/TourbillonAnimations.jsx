@@ -749,7 +749,7 @@ const TourbillonAnimations = () => {
         })
 
         if (pieces['TourbillonWestWeigth']) {
-          gsap.to(pieces['TourbillonWestWeigth'].position, { x: mob(-0.5, -0.5), y: mob(4.8, 7.5), z: mob(4.8, 2), duration: 3.0, ease: 'power3.out' })
+          gsap.to(pieces['TourbillonWestWeigth'].position, { x: mob(-0.8, -0.5), y: mob(4.8, 7.5), z: mob(3, 2), duration: 3.0, ease: 'power3.out' })
           gsap.to(pieces['TourbillonWestWeigth'].rotation, {
             x: pieces['TourbillonWestWeigth'].userData.defaultRot.x + 1,
             y: pieces['TourbillonWestWeigth'].userData.defaultRot.y + 1,
@@ -836,7 +836,7 @@ const TourbillonAnimations = () => {
           buildCollider(pieces['TourbillonSouthInnerG2'], southG2ColliderRef, 0.85)
           buildCollider(pieces['TourbillonSouthInnerG3'], southG3ColliderRef, 0.85)
         } else if (isExploded === 'west') {
-          buildCollider(pieces['TourbillonWestWeigth'], westWeigthColliderRef, 0.85)
+          buildCollider(pieces['TourbillonWestWeigth'], westWeigthColliderRef, 0.5)
           buildCollider(pieces['Gear_1'], gear1ColliderRef, 0.85)
           buildCollider(pieces['G3'], g3ColliderRef, 0.85)
           buildCollider(pieces['G5'], g5ColliderRef, 0.85)
