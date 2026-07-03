@@ -11,47 +11,51 @@ export const SHOW_HELPERS = false // Set to true to show neon trigger planes/rin
 
 // ─────────────────────────────────────────────────────────────────────────────
 // DOOR ACTIVATION CONFIGURATION (HEIGHT-BASED)
-// triggerY     : camera Y below which the door OPENS, above which it CLOSES
-// soundTriggerY: camera Y at which DoorsOpened.mp3 fires — tweak this
-//                independently from the animation trigger to nail the sync.
-//                On the way DOWN  (camera.y crosses below soundTriggerY) → plays opening sound
-//                On the way UP    (camera.y crosses above soundTriggerY) → plays closing sound
-// actions      : GLB animation actions to play
-// color        : visual helper color
+// triggerY        : camera Y below which the door OPENS, above which it CLOSES
+// soundTriggerY   : camera Y at which DoorsOpened.mp3 fires — tweak independently
+//                   On the way DOWN  (camera.y crosses below soundTriggerY) → opening sound
+//                   On the way UP    (camera.y crosses above soundTriggerY) → closing sound
+// soundFalloffRange: Y-units over which volume fades from max → 0 while the clip plays
+// actions         : GLB animation actions to play
+// color           : visual helper color
 // ─────────────────────────────────────────────────────────────────────────────
 export const DOOR_CONFIG = [
   {
     label: 'Door 1',
     triggerY: 85.0,
-    soundTriggerY: 85.0,   // ← tweak to shift when the sound fires
+    soundTriggerY: 85.0,
+    soundFalloffRange: 18.0,  // ← units of Y over which sound fades out
     actions: ['Door1_Left', 'Door1_Right'],
     color: '#00ffcc',
   },
   {
     label: 'Door 2',
     triggerY: 73.0,
-    soundTriggerY: 73.0,   // ← tweak to shift when the sound fires
+    soundTriggerY: 73.0,
+    soundFalloffRange: 18.0,
     actions: ['Door2_Left', 'Door2_Right'],
     color: '#ff00ff',
   },
   {
     label: 'Door 3',
     triggerY: 60.0,
-    soundTriggerY: 60.0,   // ← tweak to shift when the sound fires
+    soundTriggerY: 60.0,
+    soundFalloffRange: 18.0,
     actions: ['Door3_Left', 'Door3_Right'],
     color: '#ffff00',
   },
   {
     label: 'Door 4',
     triggerY: 55.0,
-    soundTriggerY: 55.0,   // ← tweak to shift when the sound fires
+    soundTriggerY: 55.0,
+    soundFalloffRange: 18.0,
     actions: ['Door4_Left', 'Door4_Right'],
     color: '#0066ff',
   },
   {
     label: 'Dome',
     triggerY: 30.0,
-    // No sound for Dome
+    // No sound for Dome (handled by DomeAnimation.jsx)
     actions: ['TourbillonDome'],
     color: '#0066ff',
   },
@@ -123,8 +127,21 @@ const DoorAnimations = () => {
     const { isPlayingAll, volumeDoors } = audioStore.getState()
     if (!isPlayingAll) return
     audio.currentTime = 0
-    audio.volume = volumeDoors
+    audio.volume = volumeDoors  // full volume at trigger point
     audio.play().catch(e => console.log('Audio play failed:', e))
+  }
+
+  // Per-frame proximity volume update — fades volume while the clip is playing
+  const updateDoorSoundProximity = (door, cameraY) => {
+    if (door.label === 'Dome' || door.soundTriggerY == null) return
+    const audio = doorAudios.current[door.label]
+    if (!audio || audio.paused) return
+    const { isPlayingAll, volumeDoors } = audioStore.getState()
+    if (!isPlayingAll) { audio.volume = 0; return }
+    const dist = Math.abs(cameraY - door.soundTriggerY)
+    const falloff = door.soundFalloffRange ?? 18.0
+    const proximity = THREE.MathUtils.clamp(1.0 - dist / falloff, 0, 1)
+    audio.volume = volumeDoors * proximity
   }
 
   useFrame(() => {
@@ -164,6 +181,9 @@ const DoorAnimations = () => {
         console.log(`[DoorAnimations] 🔊 Sound ↑ at Y=${cameraY.toFixed(2)} (soundTriggerY=${door.soundTriggerY}) — ${door.label}`)
         playDoorSound(door)
       }
+
+      // ── Proximity volume update (per-frame while clip is playing) ─────
+      updateDoorSoundProximity(door, cameraY)
     })
   })
 

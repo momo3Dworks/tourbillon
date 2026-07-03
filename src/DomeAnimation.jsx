@@ -12,19 +12,20 @@ export const SHOW_HELPERS = false // Set to true to show neon trigger planes/rin
 
 // ─────────────────────────────────────────────────────────────────────────────
 // DOME ACTIVATION CONFIGURATION (HEIGHT-BASED)
-// triggerY     : camera Y below which the dome OPENS, above which it CLOSES
-// soundTriggerY: camera Y at which DomeOpened.mp3 fires — tweak independently
-//                from the animation trigger to nail the sync.
-//                On the way DOWN (camera.y crosses below soundTriggerY) → opening sound
-//                On the way UP   (camera.y crosses above soundTriggerY) → closing sound
-// actions      : GLB animation actions to play
-// color        : visual helper color
+// triggerY        : camera Y below which the dome OPENS, above which it CLOSES
+// soundTriggerY   : camera Y at which DomeOpened.mp3 fires — tweak independently
+//                   On the way DOWN (camera.y crosses below soundTriggerY) → opening sound
+//                   On the way UP   (camera.y crosses above soundTriggerY) → closing sound
+// soundFalloffRange: Y-units over which volume fades from max → 0 while the clip plays
+// actions         : GLB animation actions to play
+// color           : visual helper color
 // ─────────────────────────────────────────────────────────────────────────────
 export const DOME_CONFIG = [
   {
     label: 'Dome',
     triggerY: 20.0,
-    soundTriggerY: 30.0,   // ← tweak to shift when DomeOpened.mp3 fires
+    soundTriggerY: 30.0,
+    soundFalloffRange: 20.0,  // ← units of Y over which DomeOpened.mp3 fades out
     actions: ['TourbillonDome'],
     color: '#0066ff',
   },
@@ -89,8 +90,20 @@ const DomeAnimations = () => {
     const { isPlayingAll, volumeDoors } = audioStore.getState()
     if (!isPlayingAll) return
     audio.currentTime = 0
-    audio.volume = volumeDoors
+    audio.volume = volumeDoors  // full volume at trigger point
     audio.play().catch(e => console.log('DomeOpened audio play failed:', e))
+  }
+
+  // Per-frame proximity volume update — fades volume while the clip is playing
+  const updateDomeSoundProximity = (dome, cameraY) => {
+    const audio = domeAudio.current
+    if (!audio || audio.paused) return
+    const { isPlayingAll, volumeDoors } = audioStore.getState()
+    if (!isPlayingAll) { audio.volume = 0; return }
+    const dist = Math.abs(cameraY - dome.soundTriggerY)
+    const falloff = dome.soundFalloffRange ?? 20.0
+    const proximity = THREE.MathUtils.clamp(1.0 - dist / falloff, 0, 1)
+    audio.volume = volumeDoors * proximity
   }
 
   useFrame(() => {
@@ -130,6 +143,9 @@ const DomeAnimations = () => {
         console.log(`[DomeAnimation] 🔊 Sound ↑ at Y=${cameraY.toFixed(2)} (soundTriggerY=${dome.soundTriggerY}) — ${dome.label}`)
         playDomeSound()
       }
+
+      // ── Proximity volume update (per-frame while clip is playing) ─────
+      updateDomeSoundProximity(dome, cameraY)
     })
   })
 
