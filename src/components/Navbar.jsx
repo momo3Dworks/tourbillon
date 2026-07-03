@@ -39,14 +39,14 @@ const Navbar = (props) => {
           style={{ display: 'flex', alignItems: 'center', cursor: 'pointer', gap: '15px' }}
         >
           {/* Replaced svg logo for a simple placeholder that resembles the intended filter */}
-          <img 
-            src="/Tourbillon_Logo.svg" 
+          <img
+            src="/Tourbillon_Logo.svg"
             alt="Tourbillon Logo"
             style={{
               width: '40px',
               height: '40px',
               filter: 'drop-shadow(0 0 10px rgba(0, 255, 255, 0.4))'
-            }} 
+            }}
           />
           <div className="nav-logo-text" style={{ display: 'flex', flexDirection: 'column' }}>
             <span style={{
@@ -57,7 +57,7 @@ const Navbar = (props) => {
               color: 'var(--color-cyan)',
               textShadow: '0 0 10px rgba(0, 255, 255, 0.3)'
             }}>
-              TOURBILLON
+              TOURBILLON <span style={{ fontSize: '0.8rem' }}>Hotel Herrera Panamá Digital Embassy</span>
             </span>
           </div>
         </div>

@@ -6,7 +6,7 @@ import Loader from './components/Loader'
 import Experience from './Experience'
 import CameraRig, { WAYPOINTS } from './CameraRig'
 import { Leva } from 'leva'
-
+import { Perf } from "r3f-webgpu-perf";
 import { useExploded } from './ExplodedContext'
 import ExplodedUI from './components/ExplodedUI'
 import { setIsMobile as setGlobalIsMobile } from './store/audioStore'
@@ -100,6 +100,7 @@ function App() {
         performance={{ min: 0.75, max: 0.95, debounce: 200 }}
         frameloop={(ready && hasStarted) ? 'always' : 'never'}
       >
+        <Perf minimal={false} style={{ display: 'none' }} />
         {/* Camera starts at waypoint 0 position. FOV 80 for mobile, 60 for desktop */}
         <PerspectiveCamera makeDefault position={WAYPOINTS[0].position} fov={isMobile ? 110 : 60} near={0.1} far={1000} />
         <color attach="background" args={['#050510']} />
