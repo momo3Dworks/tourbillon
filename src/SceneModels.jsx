@@ -141,7 +141,7 @@ const SceneModels = ({
   })
 
   // Load external textures for the TOP mesh
-  const topColorMap = useLoader(TextureLoader, '/textures/TopGears_Color.webp')
+  const topColorMap = useLoader(TextureLoader, '/textures/TopGears2_Color.webp')
   const topNormalMap = useLoader(TextureLoader, '/textures/TopGears_Normals.webp')
 
   // Setup VaultDoor Animations
