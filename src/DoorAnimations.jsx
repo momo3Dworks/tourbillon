@@ -11,40 +11,49 @@ export const SHOW_HELPERS = false // Set to true to show neon trigger planes/rin
 
 // ─────────────────────────────────────────────────────────────────────────────
 // DOOR ACTIVATION CONFIGURATION (HEIGHT-BASED)
-// triggerY  : camera height (Y) below which the door opens, and above which it closes
-// actions   : GLB animation actions to play
-// color     : visual helper color
+// triggerY     : camera Y below which the door OPENS, above which it CLOSES
+// soundTriggerY: camera Y at which DoorsOpened.mp3 fires — tweak this
+//                independently from the animation trigger to nail the sync.
+//                On the way DOWN  (camera.y crosses below soundTriggerY) → plays opening sound
+//                On the way UP    (camera.y crosses above soundTriggerY) → plays closing sound
+// actions      : GLB animation actions to play
+// color        : visual helper color
 // ─────────────────────────────────────────────────────────────────────────────
 export const DOOR_CONFIG = [
   {
     label: 'Door 1',
-    triggerY: 85.0, // Open when camera.y <= 78
+    triggerY: 85.0,
+    soundTriggerY: 85.0,   // ← tweak to shift when the sound fires
     actions: ['Door1_Left', 'Door1_Right'],
-    color: '#00ffcc', // Neon Cyan
+    color: '#00ffcc',
   },
   {
     label: 'Door 2',
-    triggerY: 73.0, // Open when camera.y <= 62
+    triggerY: 73.0,
+    soundTriggerY: 73.0,   // ← tweak to shift when the sound fires
     actions: ['Door2_Left', 'Door2_Right'],
-    color: '#ff00ff', // Neon Purple
+    color: '#ff00ff',
   },
   {
     label: 'Door 3',
-    triggerY: 60.0, // Open when camera.y <= 46
+    triggerY: 60.0,
+    soundTriggerY: 60.0,   // ← tweak to shift when the sound fires
     actions: ['Door3_Left', 'Door3_Right'],
-    color: '#ffff00', // Neon Yellow
+    color: '#ffff00',
   },
   {
     label: 'Door 4',
-    triggerY: 55.0, // Open when camera.y <= 30
+    triggerY: 55.0,
+    soundTriggerY: 55.0,   // ← tweak to shift when the sound fires
     actions: ['Door4_Left', 'Door4_Right'],
-    color: '#0066ff', // Neon Blue
+    color: '#0066ff',
   },
   {
     label: 'Dome',
-    triggerY: 30.0, // Open when camera.y <= 30
+    triggerY: 30.0,
+    // No sound for Dome
     actions: ['TourbillonDome'],
-    color: '#0066ff', // Neon Blue
+    color: '#0066ff',
   },
 ]
 
@@ -57,16 +66,20 @@ const DoorAnimations = () => {
 
   const { actions } = useAnimations(gltf.animations, gltf.scene)
 
-  // Track the open/close state of each door
+  // Track the open/close state of each door (for animation)
   // { 'Door 1': false, 'Door 2': false, ... }
   const doorStates = useRef({})
-  
+
+  // Track sound-trigger state independently from animation state
+  // true = camera is currently BELOW soundTriggerY
+  const soundStates = useRef({})
+
   // Track HTML Audio objects for each door
   const doorAudios = useRef({})
 
   useEffect(() => {
     DOOR_CONFIG.forEach((door) => {
-      if (door.label !== 'Dome') {
+      if (door.label !== 'Dome' && door.soundTriggerY != null) {
         const audio = new Audio('/DoorsOpened.mp3')
         doorAudios.current[door.label] = audio
       }
@@ -103,42 +116,53 @@ const DoorAnimations = () => {
     }
   }
 
+  const playDoorSound = (door) => {
+    if (door.label === 'Dome') return
+    const audio = doorAudios.current[door.label]
+    if (!audio) return
+    const { isPlayingAll, volumeDoors } = audioStore.getState()
+    if (!isPlayingAll) return
+    audio.currentTime = 0
+    audio.volume = volumeDoors
+    audio.play().catch(e => console.log('Audio play failed:', e))
+  }
+
   useFrame(() => {
     if (!actions) return
     camera.getWorldPosition(_camPos)
     const cameraY = _camPos.y
 
     DOOR_CONFIG.forEach((door) => {
+      // ── Animation trigger (unchanged) ────────────────────────────────────
       const isTriggered = cameraY <= door.triggerY
       const wasOpen = doorStates.current[door.label] || false
 
-      // Height-based trigger state machine
       if (isTriggered && !wasOpen) {
-        // Trigger opening
         door.actions.forEach((name) => playActionDirection(name, true))
         doorStates.current[door.label] = true
         console.log(`[DoorAnimations] Camera Y (${cameraY.toFixed(2)}) passed below triggerY (${door.triggerY}). Opening ${door.label}.`)
-        
-        // Reproducir audio una vez al abrir
-        if (door.label !== 'Dome' && doorAudios.current[door.label]) {
-          const audio = doorAudios.current[door.label]
-          audio.currentTime = 0
-          audio.play().catch(e => console.log('Audio play failed:', e))
-        }
       } else if (!isTriggered && wasOpen) {
-        // Trigger closing
         door.actions.forEach((name) => playActionDirection(name, false))
         doorStates.current[door.label] = false
         console.log(`[DoorAnimations] Camera Y (${cameraY.toFixed(2)}) went above triggerY (${door.triggerY}). Closing ${door.label}.`)
       }
-      
-      // Update volume per frame for playing audio based on proximity
-      if (door.label !== 'Dome' && doorAudios.current[door.label] && !doorAudios.current[door.label].paused) {
-        const { isPlayingAll, volumeDoors } = audioStore.getState()
-        const dist = Math.abs(cameraY - door.triggerY)
-        const maxDoorDist = 20.0
-        const factor = THREE.MathUtils.clamp(1.0 - (dist / maxDoorDist), 0, 1)
-        doorAudios.current[door.label].volume = volumeDoors * factor * (isPlayingAll ? 1 : 0)
+
+      // ── Sound trigger (independent, uses soundTriggerY) ───────────────
+      if (door.soundTriggerY == null || door.label === 'Dome') return
+
+      const isBelowSound = cameraY <= door.soundTriggerY
+      const wasBelowSound = soundStates.current[door.label] || false
+
+      if (isBelowSound && !wasBelowSound) {
+        // Camera crossed DOWN through soundTriggerY → opening sound
+        soundStates.current[door.label] = true
+        console.log(`[DoorAnimations] 🔊 Sound ↓ at Y=${cameraY.toFixed(2)} (soundTriggerY=${door.soundTriggerY}) — ${door.label}`)
+        playDoorSound(door)
+      } else if (!isBelowSound && wasBelowSound) {
+        // Camera crossed UP through soundTriggerY → closing sound (Back to Entrance)
+        soundStates.current[door.label] = false
+        console.log(`[DoorAnimations] 🔊 Sound ↑ at Y=${cameraY.toFixed(2)} (soundTriggerY=${door.soundTriggerY}) — ${door.label}`)
+        playDoorSound(door)
       }
     })
   })
