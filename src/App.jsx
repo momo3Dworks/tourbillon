@@ -66,13 +66,15 @@ function App() {
     return () => window.removeEventListener('keydown', onKey)
   }, [])
 
-  // Max DPR configured separately for Desktop vs Mobile
+  // Max DPR configured separately for Desktop vs Mobile.
+  // R3F's dpr prop renders the WebGL buffer at the requested pixel ratio while
+  // keeping the canvas CSS size at 100%×100% — no CSS transforms needed.
   const { isMobile, dpr } = useMemo(() => {
     if (typeof window === 'undefined') return { isMobile: false, dpr: 1 }
     const mobile = window.innerWidth < 768 || /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent)
     return {
       isMobile: mobile,
-      dpr: mobile ? Math.min(window.devicePixelRatio, 0.75) : Math.min(window.devicePixelRatio, 0.95)
+      dpr: mobile ? 0.5 : Math.min(window.devicePixelRatio, 0.95),
     }
   }, [])
 
@@ -97,7 +99,7 @@ function App() {
       <Canvas
         shadows
         dpr={dpr}
-        performance={{ min: 0.75, max: 0.95, debounce: 200 }}
+        performance={{ min: isMobile ? 0.5 : 0.75, max: isMobile ? 0.75 : 0.95, debounce: 200 }}
         frameloop={(ready && hasStarted) ? 'always' : 'never'}
       >
         <Perf minimal={false} style={{ display: 'none' }} />

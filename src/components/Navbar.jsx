@@ -57,7 +57,7 @@ const Navbar = (props) => {
               color: 'var(--color-cyan)',
               textShadow: '0 0 10px rgba(0, 255, 255, 0.3)'
             }}>
-              TOURBILLON <span style={{ fontSize: '0.8rem' }}>Hotel Herrera Panamá Digital Embassy</span>
+              TOURBILLON <span className="hotel-name-text" style={{ fontSize: '0.8rem' }}>Hotel Herrera Panamá Digital Embassy</span>
             </span>
           </div>
         </div>
@@ -271,6 +271,9 @@ const Navbar = (props) => {
           }
           .burger-menu {
             display: flex !important;
+          }
+          .hotel-name-text {
+            display: none !important;
           }
         }
         @media (min-width: 480px) {
