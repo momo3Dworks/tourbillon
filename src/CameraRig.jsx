@@ -67,7 +67,7 @@ export const DESKTOP_WAYPOINTS = [
     position: [3, 6, 3],
     target: [0, 1, 0],
     fov: 60,
-    dof: { focusDistance: 2.5, focalLength: 50, bokehScale: 8 },
+    dof: { focusDistance: 1.5, focalLength: 50, bokehScale: 8 },
   },
   {
     position: [1, 5, 3],

@@ -1,8 +1,9 @@
 import React, { useMemo, useEffect, useRef } from 'react'
-import { useThree, useFrame } from '@react-three/fiber'
+import { useThree, useFrame, useLoader } from '@react-three/fiber'
 import { useGLTF, useAnimations } from '@react-three/drei'
 import { KTX2Loader } from 'three/examples/jsm/loaders/KTX2Loader.js'
 import { DRACOLoader } from 'three/examples/jsm/loaders/DRACOLoader.js'
+import { TextureLoader } from 'three'
 import * as THREE from 'three'
 import { scrollProgress } from './CameraRig'
 
@@ -129,6 +130,20 @@ const SceneModels = ({
     emissiveIntensity: { value: EMISSIVE_INTENSITY_LIGHTS, min: 0, max: 20 },
   })
 
+  // TOP Mesh Texture Controls
+  const topTextureConfig = useControls('TOP Mesh Textures', {
+    colorMapRotation: { value: 0, min: -Math.PI, max: Math.PI, step: 0.001, label: 'Color Rotation' },
+    colorMapScaleU: { value: 50, min: 0.01, max: 200, step: 0.01, label: 'Color Scale U' },
+    colorMapScaleV: { value: 50, min: 0.01, max: 200, step: 0.01, label: 'Color Scale V' },
+    normalMapRotation: { value: 0, min: -Math.PI, max: Math.PI, step: 0.001, label: 'Normal Rotation' },
+    normalMapScaleU: { value: 50, min: 0.01, max: 200, step: 0.01, label: 'Normal Scale U' },
+    normalMapScaleV: { value: 50, min: 0.01, max: 200, step: 0.01, label: 'Normal Scale V' },
+  })
+
+  // Load external textures for the TOP mesh
+  const topColorMap = useLoader(TextureLoader, '/textures/TopGears_Color.webp')
+  const topNormalMap = useLoader(TextureLoader, '/textures/TopGears_Normals.webp')
+
   // Setup VaultDoor Animations
   const vaultDoorAnims = useAnimations(vaultDoor.animations, vaultDoor.scene)
 
@@ -156,7 +171,7 @@ const SceneModels = ({
     const BLENDER_FPS = 60
     const GEARS_FRAMES = {
       CenterPivotRotation: 1485,
-      PinNorth: 350,
+      PinNorth: 719,
       TourbillonNorthInnerG4: 476,
       TourbillonNorthInnerG3: 363,
       TourbillonNorthInnerG2: 363,
@@ -164,7 +179,8 @@ const SceneModels = ({
       TourbillonNorthSpiral: 7,
       TourbillonNorthCycles: 7,
       NorthSpiralGadget: 7,
-      PinEast: 350,
+      PinEast: 720,
+      PinEast_1: 720,
       InnerRingEast2: 360,
       AlquimiaCircleOuter: 232,
       TourbillonSouthInnerG1: 475,
@@ -180,7 +196,7 @@ const SceneModels = ({
       AlquimiaTriangle: 155,
       AlquimiaCircleInner: 217,
       AlquimiaSquare: 59,
-      PinWest: 350,
+      PinWest: 720,
       G3_2: 350,
       G3: 202,
       G1_1: 240,
@@ -411,6 +427,57 @@ const SceneModels = ({
       })
     })
   }, [doorsCamera, tunnelFloor, tunnelLights, crystals, tourbillonDome, tourbillonSystem, vaultDoor, TopGears])
+
+  // ── Apply external textures to the TOP mesh ───────────────────────────────
+  useEffect(() => {
+    if (!topColorMap || !topNormalMap) return
+
+    TopGears.scene.traverse((child) => {
+      if (!child.isMesh || child.name !== 'TOP') return
+
+      const mat = Array.isArray(child.material)
+        ? child.material.find(m => m.name === 'TOP')
+        : child.material.name === 'TOP' ? child.material : null
+
+      if (!mat) return
+
+      // ── Color Map ──────────────────────────────────────────────────────────
+      // Dispose the GLB-embedded texture to free GPU memory
+      if (mat.map && mat.map !== topColorMap) mat.map.dispose()
+
+      topColorMap.wrapS = THREE.RepeatWrapping
+      topColorMap.wrapT = THREE.RepeatWrapping
+      topColorMap.colorSpace = THREE.SRGBColorSpace
+      topColorMap.rotation = topTextureConfig.colorMapRotation
+      topColorMap.repeat.set(topTextureConfig.colorMapScaleU, topTextureConfig.colorMapScaleV)
+      topColorMap.center.set(0.5, 0.5)   // pivot at center for rotation
+      topColorMap.needsUpdate = true
+      mat.map = topColorMap
+
+      // ── Normal Map ─────────────────────────────────────────────────────────
+      if (mat.normalMap && mat.normalMap !== topNormalMap) mat.normalMap.dispose()
+
+      topNormalMap.wrapS = THREE.RepeatWrapping
+      topNormalMap.wrapT = THREE.RepeatWrapping
+      topNormalMap.rotation = topTextureConfig.normalMapRotation
+      topNormalMap.repeat.set(topTextureConfig.normalMapScaleU, topTextureConfig.normalMapScaleV)
+      topNormalMap.center.set(0.5, 0.5)
+      topNormalMap.needsUpdate = true
+      mat.normalMap = topNormalMap
+
+      mat.needsUpdate = true
+    })
+  }, [
+    TopGears,
+    topColorMap,
+    topNormalMap,
+    topTextureConfig.colorMapRotation,
+    topTextureConfig.colorMapScaleU,
+    topTextureConfig.colorMapScaleV,
+    topTextureConfig.normalMapRotation,
+    topTextureConfig.normalMapScaleU,
+    topTextureConfig.normalMapScaleV,
+  ])
 
   // ── Aplicar materiales emissive para que el Bloom tenga objetivos ──────────
   // Los materiales emissive son lo que el BloomNode convierte en glow.

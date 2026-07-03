@@ -171,6 +171,7 @@ const TourbillonAnimations = () => {
   const domeGltf = useAdvancedGLTF('/TourbillonDome.glb')
 
   const pivotRef = useRef(null)
+  const pinEastRef = useRef(null)
   const triggered = useRef(false)
 
   const [piecesReady, setPiecesReady] = useState(false)
@@ -323,6 +324,9 @@ const TourbillonAnimations = () => {
           child.userData.initialY = child.position.y
         }
       }
+      if (child.name === 'PinEast') {
+        pinEastRef.current = child
+      }
 
       // Configure original Blender meshes as colliders
       const isColliderMesh = child.name === 'TourbillonEast' || child.name === 'TourbillonNorth' || child.name === 'TourbillonSouth' || child.name === 'TourbillonWest';
@@ -412,6 +416,20 @@ const TourbillonAnimations = () => {
     })
     setPiecesReady(true)
   }, [domeGltf])
+
+  useEffect(() => {
+    if (piecesReady && pinEastRef.current && domeRef.current && !domeRef.current.userData.isParentedToPinEast) {
+      // Save world default rotation for exploded view orientation
+      domeRef.current.userData.worldExplodedRot = domeRef.current.rotation.clone()
+      
+      pinEastRef.current.attach(domeRef.current)
+      domeRef.current.userData.isParentedToPinEast = true
+      
+      // Update defaultPos and defaultRot to be local to PinEast
+      domeRef.current.userData.defaultPos = domeRef.current.position.clone()
+      domeRef.current.userData.defaultRot = domeRef.current.rotation.clone()
+    }
+  }, [piecesReady, gltf])
 
   // ── Explode / Collapse animation ─────────────────────────────────────────
   useEffect(() => {
@@ -515,10 +533,11 @@ const TourbillonAnimations = () => {
 
         if (pieces['AlquimiaTourbillonDome']) {
           gsap.to(pieces['AlquimiaTourbillonDome'].position, { x: mob(-3, -1), y: mob(5, 3), z: mob(4, 2), duration: 3.0, ease: 'power3.out' })
+          const targetRot = pieces['AlquimiaTourbillonDome'].userData.worldExplodedRot || pieces['AlquimiaTourbillonDome'].userData.defaultRot
           gsap.to(pieces['AlquimiaTourbillonDome'].rotation, {
-            x: pieces['AlquimiaTourbillonDome'].userData.defaultRot.x,
-            y: pieces['AlquimiaTourbillonDome'].userData.defaultRot.y,
-            z: pieces['AlquimiaTourbillonDome'].userData.defaultRot.z,
+            x: targetRot.x,
+            y: targetRot.y,
+            z: targetRot.z,
             duration: 3.0, ease: 'power3.out',
           })
         }
