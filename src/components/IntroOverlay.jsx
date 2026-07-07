@@ -1,5 +1,5 @@
-import React, { useEffect, useRef } from 'react'
-import { scrollProgress } from '../CameraRig'
+import React, { useEffect, useRef, useState } from 'react'
+import { scrollProgress, triggerAutoBack } from '../CameraRig'
 
 const LAST_WAYPOINT = 4.0   // final waypoint index
 const EXIT_DELAY_MS = 2000  // 2s after arriving at last waypoint
@@ -12,12 +12,23 @@ const IntroOverlay = () => {
   const exitTimerFired = useRef(false)
   const exitStartTime = useRef(null)
   const atLastWaypoint = useRef(false)
+  const isReturningRef = useRef(false)
+  
+  const [isReturning, setIsReturning] = useState(false)
 
   useEffect(() => {
     let raf
 
     const tick = () => {
       const sp = scrollProgress.current
+
+      if (triggerAutoBack.current && !isReturningRef.current) {
+        isReturningRef.current = true
+        setIsReturning(true)
+      } else if (!triggerAutoBack.current && isReturningRef.current) {
+        isReturningRef.current = false
+        setIsReturning(false)
+      }
 
       // ── "Hotel Herrera Productions / PRESENTS" ────────────────────────
       // Visible from waypoint 0 → ~2.8, centered in the descent
@@ -121,29 +132,30 @@ const IntroOverlay = () => {
         {/* Gradient backdrop */}
         <div style={backdropStyle} />
 
-        {/* Text */}
         <div style={{ position: 'relative', zIndex: 1, textAlign: 'center' }}>
           <div style={{
-            fontSize: '1.9rem',
+            fontSize: isReturning ? '2.5rem' : '1.9rem',
             fontWeight: 300,
             letterSpacing: '5px',
             color: '#eeeeee',
             fontFamily: 'Outfit, sans-serif',
             textShadow: '0 2px 20px rgba(0,0,0,0.9)',
-            marginBottom: '14px',
+            marginBottom: isReturning ? '0px' : '14px',
+            textTransform: 'uppercase',
           }}>
-            Hotel Herrera
+            {isReturning ? 'Come' : 'Hotel Herrera'}
           </div>
           <div style={{
-            fontSize: '1rem',
+            fontSize: isReturning ? '2.5rem' : '1rem',
             fontWeight: 200,
-            letterSpacing: '14px',
-            marginLeft: '14px', // compensate last letter-spacing
+            letterSpacing: isReturning ? '5px' : '14px',
+            marginLeft: isReturning ? '5px' : '14px',
             color: '#aaaaaa',
             fontFamily: 'Outfit, sans-serif',
             textShadow: '0 2px 20px rgba(0,0,0,0.9)',
+            textTransform: 'uppercase',
           }}>
-            PRESENTS
+            {isReturning ? 'back soon' : 'PRESENTS'}
           </div>
         </div>
       </div>
