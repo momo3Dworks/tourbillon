@@ -181,10 +181,11 @@ const PostProcessing = ({ bloom, dof, color, vignette, ca, ssr }) => {
 
   // ── Sync Bloom ────────────────────────────────────────────────
   useEffect(() => {
-    passes.bloomPass.strength = bloom.enabled ? bloom.strength : 0
+    const activeStrength = isExploded === 'hotelherrera' ? 0.01 : bloom.strength
+    passes.bloomPass.strength = bloom.enabled ? activeStrength : 0
     passes.bloomPass.radius = bloom.radius
-    passes.bloomPass.threshold = bloom.threshold
-  }, [passes.bloomPass, bloom.enabled, bloom.strength, bloom.radius, bloom.threshold])
+    passes.bloomPass.threshold = isExploded === 'hotelherrera' ? 1.0 : bloom.threshold
+  }, [passes.bloomPass, bloom.enabled, bloom.strength, bloom.radius, bloom.threshold, isExploded])
 
   // ── Sync DoF ──────────────────────────────────────────────────
   useEffect(() => {
