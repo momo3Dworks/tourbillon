@@ -401,7 +401,7 @@ const ExplodedUI = () => {
             userSelect: 'none',
           }}
         >
-          {isExploded === 'east' ? 'THEapothecary' : (isExploded === 'north' ? 'THEhotel' : (isExploded === 'south' ? 'MAD (The Philosophy / The Brand)' : 'Food & Beverage'))}
+          {isExploded === 'east' ? 'THEapothecary' : isExploded === 'north' ? 'THEhotel' : isExploded === 'south' ? 'MAD (The Philosophy / The Brand)' : isExploded === 'hotelherrera' ? 'Hotel Herrera' : 'Food & Beverage'}
         </h1>
       </div>
 

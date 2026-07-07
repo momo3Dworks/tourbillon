@@ -43,6 +43,8 @@ const EXPLODED_PIECE_NAMES = [
   'G3',
   'G5',
   'G1',
+  // Hotel Herrera Logo view
+  'HH_LOGO',
 ]
 
 let dracoLoaderInstance = null

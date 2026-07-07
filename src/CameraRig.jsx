@@ -64,10 +64,10 @@ export const DESKTOP_WAYPOINTS = [
     dof: { focusDistance: 0.5, focalLength: 100, bokehScale: 8 },
   },
   {
-    position: [0, 5, 3.5],
-    target: [0, -0.5, 0],
+    position: [0, 6.5, 1],
+    target: [0, 0.5, 0],
     fov: 60,
-    dof: { focusDistance: 0.2, focalLength: 10, bokehScale: 8 },
+    dof: { focusDistance: 0.1, focalLength: 0, bokehScale: 0 },
   },
 
 ]
@@ -140,7 +140,7 @@ export const DESKTOP_NORTH_SECTION_WAYPOINTS = {
     position: [-2.5, 5, 6.8],
     target: [-5, 5, 2],
     fov: 60,
-    dof: { focusDistance: 0.1, focalLength: 48, bokehScale: 6 },
+    dof: { focusDistance: 0.1, focalLength: 20, bokehScale: 6 },
   },
   // THEadventures — TourbillonNorthInnerG2 area
   adventures: {
@@ -283,9 +283,9 @@ const CameraRig = () => {
     targetZ: { value: 0, min: -50, max: 50, step: 0.5, label: 'Target Z' },
     fov: { value: 60, min: 10, max: 120, step: 1, label: 'Default FOV' },
     focusDistance: { value: 0.1, min: 0.1, max: 100, step: 0.1, label: 'Default Focus Distance' },
-    focalLength: { value: 20, min: 1, max: 150, step: 1, label: 'Default Focal Length' },
-    bokehScale: { value: 2.0, min: 0, max: 20, step: 0.1, label: 'Default Bokeh Scale' },
-    parallaxIntensity: { value: 0.6, min: 0, max: 5, step: 0.05, label: 'Mouse Parallax' },
+    focalLength: { value: 1, min: 1, max: 150, step: 1, label: 'Default Focal Length' },
+    bokehScale: { value: 0.0, min: 0, max: 20, step: 0.1, label: 'Default Bokeh Scale' },
+    parallaxIntensity: { value: 0.02, min: 0, max: 5, step: 0.05, label: 'Mouse Parallax' },
   })
 
   // Per-waypoint DoF & FOV toggle

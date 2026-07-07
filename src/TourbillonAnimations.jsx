@@ -176,6 +176,8 @@ const TourbillonAnimations = () => {
   const pinEastRef = useRef(null)
   const hotelHerreraLinkRef = useRef(null)
   const isHoveredHotelHerreraLink = useRef(false)
+  const hhLogoRef = useRef(null)
+  const hhCenterRef = useRef(null)
   const triggered = useRef(false)
 
   const [piecesReady, setPiecesReady] = useState(false)
@@ -259,6 +261,10 @@ const TourbillonAnimations = () => {
   const g1ColliderRef = useRef(null)
   const isHoveredG1 = useRef(false)
 
+  // HH Logo Explode Refs
+  const hhLogoColliderRef = useRef(null)
+  const isHoveredHHLogo = useRef(false)
+
   // ── Leva toggle: enable/disable GridTransition + mesh de-rendering ──
   const { enableGridTransition } = useControls('Exploded View', {
     enableGridTransition: { value: true, label: 'Grid Transition + Desrenderizado' },
@@ -269,6 +275,16 @@ const TourbillonAnimations = () => {
     southPos: { value: { x: 0, y: 0, z: 0 }, step: 0.1 },
     westPos: { value: { x: 0, y: 0, z: 0 }, step: 0.1 },
   }, { collapsed: !DEBUG_COLLIDERS })
+
+  // ── HH Logo Exploded View controls ──────────────────────────────────────────
+  const { hhLogoPos, hhLogoRot } = useControls('HH Logo Exploded View', {
+    hhLogoPos: { value: { x: 0, y: 2.5, z: 0 }, step: 0.05, label: 'Position' },
+    hhLogoRot: { value: { x: 0, y: 0, z: 0 }, step: 0.01, label: 'Rotation' },
+  }, { collapsed: true })
+  const hhLogoPosRef = useRef({ x: 0, y: 2.5, z: 0 })
+  const hhLogoRotRef = useRef({ x: 0, y: 0, z: 0 })
+  useEffect(() => { hhLogoPosRef.current = hhLogoPos }, [hhLogoPos])
+  useEffect(() => { hhLogoRotRef.current = hhLogoRot }, [hhLogoRot])
   // Keep a ref so the effect can read the latest value without re-running
   const enableGTRef = useRef(true)
   useEffect(() => { enableGTRef.current = enableGridTransition }, [enableGridTransition])
@@ -337,6 +353,16 @@ const TourbillonAnimations = () => {
         if (!centerPivotTableMeshesRef.current.find(m => m.name === child.name)) {
           centerPivotTableMeshesRef.current.push(child)
         }
+      }
+      if (child.name === 'HH_LOGO') {
+        hhLogoRef.current = child
+        if (!child.userData.defaultPos) {
+          child.userData.defaultPos = child.position.clone()
+          child.userData.defaultRot = child.rotation.clone()
+        }
+      }
+      if (child.name === 'HH_Center') {
+        hhCenterRef.current = child
       }
       if (child.name === 'PinEast') {
         pinEastRef.current = child
@@ -504,7 +530,88 @@ const TourbillonAnimations = () => {
   useEffect(() => {
     const pieces = explodedPiecesRef.current
 
-    if (isExploded) { // 'east', 'north', or 'south'
+    // ── Build invisible sphere colliders for interactive exploded pieces ─────
+    const buildCollider = (mesh, refHolder, radiusScale = 1.3) => {
+      if (!mesh) return
+      const old = mesh.getObjectByName('__explodedCollider')
+      if (old) mesh.remove(old)
+
+      const box = new THREE.Box3().setFromObject(mesh)
+      const center = new THREE.Vector3()
+      const size = new THREE.Vector3()
+      box.getCenter(center)
+      box.getSize(size)
+      const radius = (Math.max(size.x, size.y, size.z) / 2) * radiusScale
+
+      const col = new THREE.Mesh(
+        new THREE.SphereGeometry(radius, 8, 8),
+        new THREE.MeshBasicMaterial({ transparent: true, opacity: 0, depthWrite: false, visible: false })
+      )
+      col.name = '__explodedCollider'
+      col.position.copy(center).sub(mesh.position)
+      mesh.add(col)
+      refHolder.current = col
+    }
+
+    if (isExploded === 'hotelherrera') {
+      // ── HH Logo Exploded View ───────────────────────────────────────────────
+      isHoveredEast.current = false
+      isHoveredNorth.current = false
+      isHoveredSouth.current = false
+      isHoveredWest.current = false
+      setHoverTitle(null)
+      document.body.style.cursor = 'auto'
+
+      // Pause CenterPivot rotation
+      if (globalActions['GEARS__CenterPivotRotation'])
+        gsap.to(globalActions['GEARS__CenterPivotRotation'], { timeScale: 0, duration: 1.0, ease: 'power2.inOut' })
+
+      const hhLogo = hhLogoRef.current
+      const hhCenter = hhCenterRef.current
+      if (hhLogo && hhCenter) {
+        // De-parent HH_LOGO from HH_Center — attach to world scene
+        if (!hhLogo.userData.originalParent) {
+          hhLogo.userData.originalParent = hhLogo.parent
+        }
+        scene.attach(hhLogo)
+
+        // Animate to the Leva-controlled position/rotation
+        gsap.killTweensOf(hhLogo.position)
+        gsap.killTweensOf(hhLogo.rotation)
+        gsap.to(hhLogo.position, {
+          x: hhLogoPosRef.current.x,
+          y: hhLogoPosRef.current.y + 2.5,
+          z: hhLogoPosRef.current.z + 8,
+          duration: 2.0,
+          ease: 'power3.out',
+        })
+        gsap.to(hhLogo.rotation, {
+          x: hhLogoRotRef.current.x + 1.5,
+          y: hhLogoRotRef.current.y,
+          z: hhLogoRotRef.current.z,
+          duration: 2.0,
+          ease: 'power3.out',
+        })
+
+        // Dissolve everything except HH_LOGO
+        if (enableGTRef.current) {
+          forceAllProgressTo(0.0)
+          setNonExplodedMeshesVisible(true, ['HH_LOGO'], [])
+          const SWEEP_DURATION = 1.0
+          gsap.killTweensOf(progressUnified)
+          gsap.to(progressUnified, { current: 1.0, duration: SWEEP_DURATION, ease: 'power2.inOut' })
+          gsap.delayedCall(SWEEP_DURATION, () => {
+            setNonExplodedMeshesVisible(false, ['HH_LOGO'], [])
+          })
+        } else {
+          setNonExplodedMeshesVisible(false, ['HH_LOGO'], [])
+        }
+        
+        setTimeout(() => {
+          buildCollider(hhLogoRef.current, hhLogoColliderRef, 0.85)
+        }, 2200)
+      }
+    } else if (isExploded) { // 'east', 'north', or 'south'
       // Clean up hover state
       isHoveredEast.current = false
       isHoveredNorth.current = false
@@ -881,28 +988,7 @@ const TourbillonAnimations = () => {
         }
       }
 
-      // ── Build invisible sphere colliders for interactive exploded pieces ─────
-      const buildCollider = (mesh, refHolder, radiusScale = 1.3) => {
-        if (!mesh) return
-        const old = mesh.getObjectByName('__explodedCollider')
-        if (old) mesh.remove(old)
-
-        const box = new THREE.Box3().setFromObject(mesh)
-        const center = new THREE.Vector3()
-        const size = new THREE.Vector3()
-        box.getCenter(center)
-        box.getSize(size)
-        const radius = (Math.max(size.x, size.y, size.z) / 2) * radiusScale
-
-        const col = new THREE.Mesh(
-          new THREE.SphereGeometry(radius, 8, 8),
-          new THREE.MeshBasicMaterial({ transparent: true, opacity: 0, depthWrite: false, visible: false })
-        )
-        col.name = '__explodedCollider'
-        col.position.copy(center).sub(mesh.position)
-        mesh.add(col)
-        refHolder.current = col
-      }
+      // buildCollider was moved to the top of this useEffect
 
       setTimeout(() => {
         if (isExploded === 'east') {
@@ -930,8 +1016,8 @@ const TourbillonAnimations = () => {
         }
       }, 2200)
 
-    } else {
-      // ── Collapse ────────────────────────────────────────────────────
+    } else if (!isExploded) {
+      // ── Collapse ────────────────────────────────────────────────────────────
       waypointCameraState.hoveredObject = null
       // Reset section camera waypoint
       setActiveSection(null)
@@ -940,6 +1026,7 @@ const TourbillonAnimations = () => {
           northOutterColliderRef, northInnerColliderRef, northG4ColliderRef, northG2ColliderRef, northG3ColliderRef,
           southOutterColliderRef, southInnerColliderRef, southG4ColliderRef, southG2ColliderRef, southG3ColliderRef,
           westWeigthColliderRef, gear1ColliderRef, g3ColliderRef, g5ColliderRef, g1ColliderRef,
+          hhLogoColliderRef,
         ].forEach(ref => {
           if (ref.current) {
             ref.current.parent?.remove(ref.current)
@@ -964,6 +1051,7 @@ const TourbillonAnimations = () => {
       isHoveredG3.current = false
       isHoveredG5.current = false
       isHoveredG1.current = false
+      isHoveredHHLogo.current = false
       setTooltip(null)
       document.body.style.cursor = 'auto'
       if (globalActions['GEARS'])
@@ -990,6 +1078,27 @@ const TourbillonAnimations = () => {
 
       // Always re-show all meshes (handles both GT-on and GT-off modes)
       setNonExplodedMeshesVisible(true, [], [])
+
+      // Re-parent HH_LOGO if it was detached by hotelherrera view
+      const hhLogo = hhLogoRef.current
+      if (hhLogo && hhLogo.userData.originalParent) {
+        gsap.killTweensOf(hhLogo.position)
+        gsap.killTweensOf(hhLogo.rotation)
+        hhLogo.userData.originalParent.attach(hhLogo)
+        delete hhLogo.userData.originalParent
+        gsap.to(hhLogo.position, {
+          x: hhLogo.userData.defaultPos.x,
+          y: hhLogo.userData.defaultPos.y,
+          z: hhLogo.userData.defaultPos.z,
+          duration: 2.0, ease: 'power2.inOut',
+        })
+        gsap.to(hhLogo.rotation, {
+          x: hhLogo.userData.defaultRot.x,
+          y: hhLogo.userData.defaultRot.y,
+          z: hhLogo.userData.defaultRot.z,
+          duration: 2.0, ease: 'power2.inOut',
+        })
+      }
 
       // Re-parent East, North, South and West pieces
       const allAnimatedPieces = [...ANIMATED_EAST_PIECE_NAMES, ...ANIMATED_NORTH_PIECE_NAMES, ...ANIMATED_SOUTH_PIECE_NAMES, ...ANIMATED_WEST_PIECE_NAMES]
@@ -1125,7 +1234,7 @@ const TourbillonAnimations = () => {
 
 
 
-    if (!isExploded) {
+    if (!isExploded || isExploded === 'hotelherrera') {
       _raycaster.setFromCamera(state.mouse, state.camera)
       // East hover
       const eastTarget = eastColliderRef.current
@@ -1204,7 +1313,7 @@ const TourbillonAnimations = () => {
         if (currentlyHovered && !isHoveredHotelHerreraLink.current) {
           isHoveredHotelHerreraLink.current = true
           document.body.style.cursor = 'pointer'
-          setHoverTitle('Go to HotelHerrera.com')
+          setHoverTitle('Hotel Herrera')
         } else if (!currentlyHovered && isHoveredHotelHerreraLink.current) {
           isHoveredHotelHerreraLink.current = false
           document.body.style.cursor = 'auto'
@@ -1623,6 +1732,37 @@ const TourbillonAnimations = () => {
         updateWestPiece(g1ColliderRef, isHoveredG1, 'G1', 'THEcatering & Tastings')
       }
     }
+
+    if (isExploded === 'hotelherrera') {
+      if (activeModal) {
+        if (isHoveredHHLogo.current) {
+          isHoveredHHLogo.current = false
+          waypointCameraState.hoveredObject = null
+          setTooltip(null)
+          document.body.style.cursor = 'auto'
+        }
+      } else {
+        _raycaster.setFromCamera(state.mouse, state.camera)
+        const hhLogoCollider = hhLogoColliderRef.current
+        const hhLogoMesh = hhLogoRef.current
+
+        if (hhLogoCollider && hhLogoMesh) {
+          const hit = _raycaster.intersectObject(hhLogoCollider, false).length > 0
+
+          if (hit && !isHoveredHHLogo.current) {
+            isHoveredHHLogo.current = true
+            document.body.style.cursor = 'pointer'
+            setTooltip({ text: 'Go to HotelHerrera.com' })
+            waypointCameraState.hoveredObject = 'HH_LOGO'
+          } else if (!hit && isHoveredHHLogo.current) {
+            isHoveredHHLogo.current = false
+            document.body.style.cursor = 'auto'
+            setTooltip(null)
+            if (waypointCameraState.hoveredObject === 'HH_LOGO') waypointCameraState.hoveredObject = null
+          }
+        }
+      }
+    }
   })
 
   // ── Click handler ─────────────────────────────────────────────────────────
@@ -1634,7 +1774,8 @@ const TourbillonAnimations = () => {
       }
 
       if (isHoveredHotelHerreraLink.current) {
-        window.open('https://hotelherrera.com/', '_blank', 'noopener,noreferrer')
+        setExploded('hotelherrera')
+        document.body.style.cursor = 'auto'
         return
       }
 
@@ -1734,6 +1875,11 @@ const TourbillonAnimations = () => {
         if (isHoveredG1.current) {
           setActiveSection('catering')
           setActiveModal('catering')
+          return
+        }
+      } else if (isExploded === 'hotelherrera') {
+        if (isHoveredHHLogo.current) {
+          window.open('https://hotelherrera.com/', '_blank', 'noopener,noreferrer')
           return
         }
       }
