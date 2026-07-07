@@ -33,3 +33,44 @@ body {
 .perf-panel {
   top: 5rem !important;
 }
+
+/* ── IntroOverlay Typography ── */
+.MainTitleIntro {
+  font-size: 4.5rem;
+  font-weight: 400;
+  letter-spacing: 22px;
+  margin-left: 22px; /* compensate trailing space */
+  color: #ffffff;
+  font-family: var(--font-primary);
+  text-transform: uppercase;
+  text-shadow: 0 0 30px rgba(0,255,255,0.35), 0 2px 20px rgba(0,0,0,0.9);
+  line-height: 1;
+}
+
+.MainTitleSubtitle {
+  width: 100%;
+  font-size: 0.72rem;
+  font-weight: 300;
+  color: #cccccc;
+  font-family: var(--font-primary);
+  text-transform: uppercase;
+  letter-spacing: 0.72em;
+  margin-left: 0.72em; /* compensate trailing space */
+  text-align: center;
+  white-space: nowrap;
+}
+
+@media (max-width: 700px) {
+  .MainTitleIntro {
+    font-size: 2.2rem;
+    letter-spacing: 10px;
+    margin-left: 10px;
+  }
+  
+  .MainTitleSubtitle {
+    font-size: 0.45rem;
+    letter-spacing: 0.3em;
+    margin-left: 0.3em;
+    white-space: normal; /* allow wrap if still too long */
+  }
+}

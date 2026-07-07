@@ -169,19 +169,7 @@ const IntroOverlay = () => {
         {/* Content */}
         <div style={{ position: 'relative', zIndex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
           {/* Main title */}
-          <div className='MainTitleIntro'
-            style={{
-              fontSize: '4.5rem',
-              fontWeight: 400,
-              letterSpacing: '22px',
-              marginLeft: '22px', // compensate last char trailing space
-              color: '#ffffff',
-              fontFamily: 'Outfit, sans-serif',
-              textTransform: 'uppercase',
-              textShadow: '0 0 30px rgba(0,255,255,0.35), 0 2px 20px rgba(0,0,0,0.9)',
-              lineHeight: 1,
-            }}
-          >
+          <div className='MainTitleIntro'>
             Tourbillon
           </div>
 
@@ -198,20 +186,7 @@ const IntroOverlay = () => {
           />
 
           {/* Subtitle — letter-spacing fills the width of the line */}
-          <div
-            style={{
-              width: '100%',
-              fontSize: '0.72rem',
-              fontWeight: 300,
-              color: '#cccccc',
-              fontFamily: 'Outfit, sans-serif',
-              textTransform: 'uppercase',
-              letterSpacing: '0.72em',        // proportional tracking
-              marginLeft: '0.72em',           // compensate trailing space on last char
-              textAlign: 'center',
-              whiteSpace: 'nowrap',
-            }}
-          >
+          <div className='MainTitleSubtitle'>
             Hotel Herrera Panamá Digital Embassy
           </div>
         </div>
