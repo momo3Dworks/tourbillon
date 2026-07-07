@@ -185,3 +185,10 @@
     border-right-color: var(--border);
   }
 }
+
+@media screen and (max-width: 1000px) {
+  .MainTitleIntro {
+    font-size: 1rem;
+  }
+
+}

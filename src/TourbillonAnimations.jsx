@@ -171,7 +171,11 @@ const TourbillonAnimations = () => {
   const domeGltf = useAdvancedGLTF('/TourbillonDome.glb')
 
   const pivotRef = useRef(null)
+  const centerPivotTableMeshesRef = useRef([]) // CenterPivotTable_1/_2 + HH_Center/_1 — attached to CenterPivot at runtime
+  const eastHierarchyMapRef = useRef({})
   const pinEastRef = useRef(null)
+  const hotelHerreraLinkRef = useRef(null)
+  const isHoveredHotelHerreraLink = useRef(false)
   const triggered = useRef(false)
 
   const [piecesReady, setPiecesReady] = useState(false)
@@ -324,14 +328,35 @@ const TourbillonAnimations = () => {
           child.userData.initialY = child.position.y
         }
       }
+      // CenterPivotTable + HH_Center sub-meshes — attach to CenterPivot at runtime
+      if (
+        child.name === 'CenterPivotTable_1' || child.name === 'CenterPivotTable_2' ||
+        child.name === 'HH_Center' || child.name === 'HH_Center_1' ||
+        child.name === 'HotelHerreraLink'
+      ) {
+        if (!centerPivotTableMeshesRef.current.find(m => m.name === child.name)) {
+          centerPivotTableMeshesRef.current.push(child)
+        }
+      }
       if (child.name === 'PinEast') {
         pinEastRef.current = child
+      }
+
+      // East hierarchy collection
+      if ([
+        'PinEast', 'TourbillonEastInnerG4', 'AlquimiaCircleOuter', 'AlquimiaTriangle',
+        'AlquimiaCircleInner', 'AlquimiaSquare', 'AlquimiaFlaskGrabber', 'AlquimiaWeight',
+        'Flask', 'AlquimiaFlask', 'AlquimiaGear7', 'AlquimiaGear1', 'AlquimiaInnerCircleGrabber'
+      ].includes(child.name)) {
+        eastHierarchyMapRef.current[child.name] = child
       }
 
       // Configure original Blender meshes as colliders
       const isColliderMesh = child.name === 'TourbillonEast' || child.name === 'TourbillonNorth' || child.name === 'TourbillonSouth' || child.name === 'TourbillonWest';
       if (isColliderMesh && !child.userData.colliderConfigured) {
         child.userData.colliderConfigured = true;
+        child.castShadow = false;
+        child.receiveShadow = false;
 
         if (child.name === 'TourbillonEast') { eastOriginalMat.current = child.material; eastColliderRef.current = child; }
         if (child.name === 'TourbillonNorth') northColliderRef.current = child;
@@ -353,6 +378,11 @@ const TourbillonAnimations = () => {
             child.material.depthWrite = false;
           }
         }
+      }
+
+      if (child.name === 'HotelHerreraLink') {
+        hotelHerreraLinkRef.current = child;
+        child.visible = false;
       }
 
 
@@ -393,7 +423,46 @@ const TourbillonAnimations = () => {
         }
       }
     })
+
+    // Attach CenterPivotTable meshes to CenterPivot so they follow its Y animation
+    if (pivotRef.current && centerPivotTableMeshesRef.current.length > 0) {
+      centerPivotTableMeshesRef.current.forEach(mesh => {
+        if (!mesh.userData.isParentedToPivot) {
+          pivotRef.current.attach(mesh) // preserves world transform, then reparents
+          mesh.userData.isParentedToPivot = true
+        }
+      })
+      console.log('[INFO] CenterPivotTable meshes attached to CenterPivot:', centerPivotTableMeshesRef.current.map(m => m.name))
+    }
+
+    // Rebuild precise East hierarchy since it was flattened
+    const h = eastHierarchyMapRef.current;
+    const reparent = (childName, parentName) => {
+      if (h[childName] && h[parentName] && h[childName].parent !== h[parentName]) {
+        h[parentName].attach(h[childName]);
+      }
+    };
+
+    reparent('TourbillonEastInnerG4', 'PinEast');
+    reparent('AlquimiaCircleOuter', 'TourbillonEastInnerG4');
+
+    reparent('AlquimiaTriangle', 'AlquimiaCircleOuter');
+
+    reparent('AlquimiaCircleInner', 'AlquimiaTriangle');
+    reparent('AlquimiaGear1', 'AlquimiaTriangle');
+    reparent('AlquimiaInnerCircleGrabber', 'AlquimiaTriangle');
+
+    reparent('AlquimiaSquare', 'AlquimiaCircleInner');
+    reparent('AlquimiaGear7', 'AlquimiaCircleInner');
+
+    reparent('AlquimiaFlaskGrabber', 'AlquimiaSquare');
+    reparent('Flask', 'AlquimiaSquare');
+    reparent('AlquimiaFlask', 'AlquimiaSquare');
+
+    reparent('AlquimiaWeight', 'AlquimiaFlaskGrabber');
+
   }, [gltf])
+
 
   // ── Traverse TourbillonDome ───────────────────────────────────────────────
   useEffect(() => {
@@ -421,10 +490,10 @@ const TourbillonAnimations = () => {
     if (piecesReady && pinEastRef.current && domeRef.current && !domeRef.current.userData.isParentedToPinEast) {
       // Save world default rotation for exploded view orientation
       domeRef.current.userData.worldExplodedRot = domeRef.current.rotation.clone()
-      
+
       pinEastRef.current.attach(domeRef.current)
       domeRef.current.userData.isParentedToPinEast = true
-      
+
       // Update defaultPos and defaultRot to be local to PinEast
       domeRef.current.userData.defaultPos = domeRef.current.position.clone()
       domeRef.current.userData.defaultRot = domeRef.current.rotation.clone()
@@ -532,7 +601,7 @@ const TourbillonAnimations = () => {
         })
 
         if (pieces['AlquimiaTourbillonDome']) {
-          gsap.to(pieces['AlquimiaTourbillonDome'].position, { x: mob(-3, -1), y: mob(5, 3), z: mob(4, 2), duration: 3.0, ease: 'power3.out' })
+          gsap.to(pieces['AlquimiaTourbillonDome'].position, { x: mob(-2.2, 0), y: mob(5, 3), z: mob(5, 2), duration: 3.0, ease: 'power3.out' })
           const targetRot = pieces['AlquimiaTourbillonDome'].userData.worldExplodedRot || pieces['AlquimiaTourbillonDome'].userData.defaultRot
           gsap.to(pieces['AlquimiaTourbillonDome'].rotation, {
             x: targetRot.x,
@@ -543,30 +612,28 @@ const TourbillonAnimations = () => {
         }
 
         if (pieces['InnerRingEast']) {
-          gsap.to(pieces['InnerRingEast'].position, { x: mob(2, 1), y: mob(4.8, 7.5), z: mob(7, 1), duration: 2.0, ease: 'power3.out' })
+          gsap.to(pieces['InnerRingEast'].position, { x: mob(1.2, 0.2), y: mob(4.8, 7), z: mob(7, 4), duration: 2.0, ease: 'power3.out' })
           gsap.to(pieces['InnerRingEast'].rotation, {
-            x: pieces['InnerRingEast'].userData.defaultRot.x,
-            y: pieces['InnerRingEast'].userData.defaultRot.y,
+            x: pieces['InnerRingEast'].userData.defaultRot.x - 1,
+            y: pieces['InnerRingEast'].userData.defaultRot.y + 1,
             z: pieces['InnerRingEast'].userData.defaultRot.z,
             duration: 3.0, ease: 'power3.out',
           })
         }
 
-        ['AlquimiaCircleOuter', 'AlquimiaTriangle', 'AlquimiaCircleInner', 'AlquimiaSquare'].forEach(name => {
-          if (pieces[name]) {
-            gsap.killTweensOf(pieces[name].rotation)
-            gsap.to(pieces[name].rotation, {
-              x: pieces[name].userData.defaultRot.x,
-              y: pieces[name].userData.defaultRot.y,
-              z: pieces[name].userData.defaultRot.z,
-              duration: 3.0, ease: 'power3.out',
-            })
-          }
-        })
+        if (pieces['AlquimiaCircleOuter']) {
+          gsap.killTweensOf(pieces['AlquimiaCircleOuter'].rotation)
+          gsap.to(pieces['AlquimiaCircleOuter'].rotation, {
+            x: pieces['AlquimiaCircleOuter'].userData.defaultRot.x,
+            y: pieces['AlquimiaCircleOuter'].userData.defaultRot.y + (Math.PI / -2),
+            z: pieces['AlquimiaCircleOuter'].userData.defaultRot.z,
+            duration: 3.0, ease: 'power3.out',
+          })
+        }
 
         if (pieces['AlquimiaCircleOuter']) {
-          pieces['AlquimiaCircleOuter'].userData.worldExplodedY = mob(4.8, 5.4)
-          gsap.to(pieces['AlquimiaCircleOuter'].position, { x: mob(0, 0), y: pieces['AlquimiaCircleOuter'].userData.worldExplodedY, z: mob(7, 2), duration: 2.0, ease: 'power3.out' })
+          pieces['AlquimiaCircleOuter'].userData.worldExplodedY = mob(4.8, 5.2)
+          gsap.to(pieces['AlquimiaCircleOuter'].position, { x: mob(0, 0.25), y: pieces['AlquimiaCircleOuter'].userData.worldExplodedY, z: mob(7, 5), duration: 2.0, ease: 'power3.out' })
         }
       } else if (isExploded === 'north') {
         // North exploded animations (WORLD SPACE)
@@ -579,16 +646,16 @@ const TourbillonAnimations = () => {
         })
 
         if (pieces['TourbillonNorthOutter']) {
-          gsap.to(pieces['TourbillonNorthOutter'].position, { x: mob(0, 0), y: mob(4.8, 7.3), z: mob(4.8, 1), duration: 3.0, ease: 'power3.out' })
+          gsap.to(pieces['TourbillonNorthOutter'].position, { x: mob(0, 0), y: mob(4.8, 7.3), z: mob(7, 2), duration: 3.0, ease: 'power3.out' })
           gsap.to(pieces['TourbillonNorthOutter'].rotation, {
             x: pieces['TourbillonNorthOutter'].userData.defaultRot.x + 1,
-            y: pieces['TourbillonNorthOutter'].userData.defaultRot.y,
+            y: pieces['TourbillonNorthOutter'].userData.defaultRot.y - 1,
             z: pieces['TourbillonNorthOutter'].userData.defaultRot.z,
             duration: 3.0, ease: 'power3.out',
           })
         }
         if (pieces['TourbillonNorthInner']) {
-          gsap.to(pieces['TourbillonNorthInner'].position, { x: mob(3.4, 1), y: mob(4.8, 4.8), z: mob(4.8, 2), duration: 3.0, ease: 'power3.out' })
+          gsap.to(pieces['TourbillonNorthInner'].position, { x: mob(3.4, 1), y: mob(4.8, 5.5), z: mob(4.8, 2), duration: 3.0, ease: 'power3.out' })
           gsap.to(pieces['TourbillonNorthInner'].rotation, {
             x: pieces['TourbillonNorthInner'].userData.defaultRot.x + 1,
             y: pieces['TourbillonNorthInner'].userData.defaultRot.y,
@@ -598,7 +665,7 @@ const TourbillonAnimations = () => {
         }
         if (pieces['TourbillonNorthInnerG4']) {
           gsap.to(pieces['TourbillonNorthInnerG4'].position, {
-            x: mob(-3.5, -1), y: mob(4.8, 3.5), z: mob(5.8, 2), duration: 2.8, ease: 'power3.out'
+            x: mob(-3.5, -0.2), y: mob(4.8, 4.7), z: mob(5.8, 6), duration: 2.8, ease: 'power3.out'
           })
           gsap.to(pieces['TourbillonNorthInnerG4'].rotation, {
             x: pieces['TourbillonNorthInnerG4'].userData.defaultRot.x,
@@ -609,11 +676,11 @@ const TourbillonAnimations = () => {
 
         }
         if (pieces['TourbillonNorthInnerG2']) {
-          gsap.to(pieces['TourbillonNorthInnerG2'].position, { x: mob(-1.9, 0.8), y: mob(5.2, 3.2), z: mob(6.5, 4), duration: 3.0, ease: 'power3.out' })
+          gsap.to(pieces['TourbillonNorthInnerG2'].position, { x: mob(-1.9, 0.4), y: mob(5.2, 4), z: mob(6.5, 6), duration: 3.0, ease: 'power3.out' })
           gsap.to(pieces['TourbillonNorthInnerG2'].rotation, {
             x: pieces['TourbillonNorthInnerG2'].userData.defaultRot.x,
             y: pieces['TourbillonNorthInnerG2'].userData.defaultRot.y + 5,
-            z: pieces['TourbillonNorthInnerG2'].userData.defaultRot.z + 5,
+            z: pieces['TourbillonNorthInnerG2'].userData.defaultRot.z + 1,
             duration: 3.0, ease: 'power3.out',
           })
         }
@@ -668,16 +735,16 @@ const TourbillonAnimations = () => {
         })
 
         if (pieces['TourbillonSouthOutter']) {
-          gsap.to(pieces['TourbillonSouthOutter'].position, { x: mob(0, 0), y: mob(4.8, 8), z: mob(4.8, -1), duration: 3.0, ease: 'power3.out' })
+          gsap.to(pieces['TourbillonSouthOutter'].position, { x: mob(0, 0), y: mob(4.8, 7), z: mob(6, 3), duration: 3.0, ease: 'power3.out' })
           gsap.to(pieces['TourbillonSouthOutter'].rotation, {
             x: pieces['TourbillonSouthOutter'].userData.defaultRot.x + 1,
-            y: pieces['TourbillonSouthOutter'].userData.defaultRot.y,
-            z: pieces['TourbillonSouthOutter'].userData.defaultRot.z,
+            y: pieces['TourbillonSouthOutter'].userData.defaultRot.y + 5,
+            z: pieces['TourbillonSouthOutter'].userData.defaultRot.z - 1,
             duration: 3.0, ease: 'power3.out',
           })
         }
         if (pieces['TourbillonSouthInner']) {
-          gsap.to(pieces['TourbillonSouthInner'].position, { x: mob(3.4, 0), y: mob(4.8, 5.5), z: mob(4.8, 1), duration: 3.0, ease: 'power3.out' })
+          gsap.to(pieces['TourbillonSouthInner'].position, { x: mob(2.5, 0), y: mob(4.8, 5.9), z: mob(4.8, 1), duration: 3.0, ease: 'power3.out' })
           gsap.to(pieces['TourbillonSouthInner'].rotation, {
             x: pieces['TourbillonSouthInner'].userData.defaultRot.x + 1,
             y: pieces['TourbillonSouthInner'].userData.defaultRot.y,
@@ -686,7 +753,7 @@ const TourbillonAnimations = () => {
           })
         }
         if (pieces['TourbillonSouthInnerG4']) {
-          gsap.to(pieces['TourbillonSouthInnerG4'].position, { x: mob(-3.2, 0.8), y: mob(4.8, 4), z: mob(5.8, 2), duration: 2.8, ease: 'power3.out' })
+          gsap.to(pieces['TourbillonSouthInnerG4'].position, { x: mob(-2.5, 0), y: mob(4.8, 4.65), z: mob(5.8, 6), duration: 2.8, ease: 'power3.out' })
           gsap.to(pieces['TourbillonSouthInnerG4'].rotation, {
             x: pieces['TourbillonSouthInnerG4'].userData.defaultRot.x,
             y: pieces['TourbillonSouthInnerG4'].userData.defaultRot.y,
@@ -695,7 +762,7 @@ const TourbillonAnimations = () => {
           })
         }
         if (pieces['TourbillonSouthInnerG2']) {
-          gsap.to(pieces['TourbillonSouthInnerG2'].position, { x: mob(-2.3, 0), y: mob(4.8, 2.7), z: mob(5.8, 3), duration: 3.0, ease: 'power3.out' })
+          gsap.to(pieces['TourbillonSouthInnerG2'].position, { x: mob(-1.8, 0), y: mob(4.8, 3.5), z: mob(5.8, 6), duration: 3.0, ease: 'power3.out' })
           gsap.to(pieces['TourbillonSouthInnerG2'].rotation, {
             x: pieces['TourbillonSouthInnerG2'].userData.defaultRot.x,
             y: pieces['TourbillonSouthInnerG2'].userData.defaultRot.y + 7,
@@ -704,7 +771,7 @@ const TourbillonAnimations = () => {
           })
         }
         if (pieces['TourbillonSouthInnerG3']) {
-          gsap.to(pieces['TourbillonSouthInnerG3'].position, { x: mob(-3.5, -0.5), y: mob(5.4, 3.8), z: mob(5.8, 4), duration: 3.5, ease: 'power3.out' })
+          gsap.to(pieces['TourbillonSouthInnerG3'].position, { x: mob(-2.8, 0), y: mob(5.4, 3.8), z: mob(5.8, 4), duration: 3.5, ease: 'power3.out' })
           gsap.to(pieces['TourbillonSouthInnerG3'].rotation, {
             x: pieces['TourbillonSouthInnerG3'].userData.defaultRot.x,
             y: pieces['TourbillonSouthInnerG3'].userData.defaultRot.y - 12,
@@ -768,7 +835,7 @@ const TourbillonAnimations = () => {
         })
 
         if (pieces['TourbillonWestWeigth']) {
-          gsap.to(pieces['TourbillonWestWeigth'].position, { x: mob(-0.8, -0.5), y: mob(4.8, 7.5), z: mob(3, 2), duration: 3.0, ease: 'power3.out' })
+          gsap.to(pieces['TourbillonWestWeigth'].position, { x: mob(-0.5, 0), y: mob(4.8, 7.5), z: mob(5, 2), duration: 3.0, ease: 'power3.out' })
           gsap.to(pieces['TourbillonWestWeigth'].rotation, {
             x: pieces['TourbillonWestWeigth'].userData.defaultRot.x + 1,
             y: pieces['TourbillonWestWeigth'].userData.defaultRot.y + 1,
@@ -777,7 +844,7 @@ const TourbillonAnimations = () => {
           })
         }
         if (pieces['Gear_1']) {
-          gsap.to(pieces['Gear_1'].position, { x: mob(3, 1), y: mob(4.8, 2.8), z: mob(4.8, 3), duration: 3.0, ease: 'power3.out' })
+          gsap.to(pieces['Gear_1'].position, { x: mob(3, 0), y: mob(4.8, 2.8), z: mob(4.8, 3), duration: 3.0, ease: 'power3.out' })
           gsap.to(pieces['Gear_1'].rotation, {
             x: pieces['Gear_1'].userData.defaultRot.x,
             y: pieces['Gear_1'].userData.defaultRot.y + 1.5,
@@ -786,7 +853,7 @@ const TourbillonAnimations = () => {
           })
         }
         if (pieces['G3']) {
-          gsap.to(pieces['G3'].position, { x: mob(-2.5, -1.2), y: mob(4.8, 6), z: mob(5.8, 3), duration: 2.8, ease: 'power3.out' })
+          gsap.to(pieces['G3'].position, { x: mob(-2, 0), y: mob(4.8, 6.2), z: mob(5.8, 3), duration: 2.8, ease: 'power3.out' })
           gsap.to(pieces['G3'].rotation, {
             x: pieces['G3'].userData.defaultRot.x + 5,
             y: pieces['G3'].userData.defaultRot.y + 1,
@@ -795,7 +862,7 @@ const TourbillonAnimations = () => {
           })
         }
         if (pieces['G5']) {
-          gsap.to(pieces['G5'].position, { x: mob(0.5, -0.4), y: mob(4.8, 4.5), z: mob(7, 6), duration: 3.0, ease: 'power3.out' })
+          gsap.to(pieces['G5'].position, { x: mob(0.7, -0.1), y: mob(4.8, 4.5), z: mob(6, 6), duration: 3.0, ease: 'power3.out' })
           gsap.to(pieces['G5'].rotation, {
             x: pieces['G5'].userData.defaultRot.x + 1,
             y: pieces['G5'].userData.defaultRot.y,
@@ -804,7 +871,7 @@ const TourbillonAnimations = () => {
           })
         }
         if (pieces['G1']) {
-          gsap.to(pieces['G1'].position, { x: mob(-3.5, -1), y: mob(5, 5), z: mob(5.8, 2), duration: 3.5, ease: 'power3.out' })
+          gsap.to(pieces['G1'].position, { x: mob(-3, 0), y: mob(5, 5.2), z: mob(5.8, 2), duration: 3.5, ease: 'power3.out' })
           gsap.to(pieces['G1'].rotation, {
             x: pieces['G1'].userData.defaultRot.x,
             y: pieces['G1'].userData.defaultRot.y + 2,
@@ -1036,13 +1103,18 @@ const TourbillonAnimations = () => {
       const isTriggered = cameraY <= 20.0
       if (isTriggered && !triggered.current) {
         triggered.current = true
+
+        // CenterPivot — CenterPivotTable_1/_2 follow automatically as children
         gsap.killTweensOf(pivotRef.current.position)
         gsap.to(pivotRef.current.position, {
-          y: pivotRef.current.userData.initialY + 2.0,
+          y: pivotRef.current.userData.initialY + 1.5,
           duration: 1.5, delay: 1.25, ease: 'bounce.out',
         })
+
       } else if (!isTriggered && triggered.current) {
         triggered.current = false
+
+        // CenterPivot
         gsap.killTweensOf(pivotRef.current.position)
         gsap.to(pivotRef.current.position, {
           y: pivotRef.current.userData.initialY,
@@ -1050,6 +1122,8 @@ const TourbillonAnimations = () => {
         })
       }
     }
+
+
 
     if (!isExploded) {
       _raycaster.setFromCamera(state.mouse, state.camera)
@@ -1063,14 +1137,10 @@ const TourbillonAnimations = () => {
           isHoveredEast.current = true
           document.body.style.cursor = 'pointer'
           setHoverTitle('THEapothecary')
-          if (globalActions['GEARS']) gsap.to(globalActions['GEARS'], { timeScale: 0, duration: 1.5, ease: 'power2.out' })
-          if (globalActions['TOPGEARS']) gsap.to(globalActions['TOPGEARS'], { timeScale: 0, duration: 1.5, ease: 'power2.out' })
         } else if (!currentlyHovered && isHoveredEast.current) {
           isHoveredEast.current = false
           document.body.style.cursor = 'auto'
           setHoverTitle(null)
-          if (globalActions['GEARS']) gsap.to(globalActions['GEARS'], { timeScale: 1, duration: 1.5, ease: 'power2.in' })
-          if (globalActions['TOPGEARS']) gsap.to(globalActions['TOPGEARS'], { timeScale: 1, duration: 1.5, ease: 'power2.in' })
         }
       }
 
@@ -1084,14 +1154,10 @@ const TourbillonAnimations = () => {
           isHoveredNorth.current = true
           document.body.style.cursor = 'pointer'
           setHoverTitle('THEhotel')
-          if (globalActions['GEARS']) gsap.to(globalActions['GEARS'], { timeScale: 0, duration: 1.5, ease: 'power2.out' })
-          if (globalActions['TOPGEARS']) gsap.to(globalActions['TOPGEARS'], { timeScale: 0, duration: 1.5, ease: 'power2.out' })
         } else if (!currentlyHovered && isHoveredNorth.current) {
           isHoveredNorth.current = false
           document.body.style.cursor = 'auto'
           setHoverTitle(null)
-          if (globalActions['GEARS']) gsap.to(globalActions['GEARS'], { timeScale: 1, duration: 1.5, ease: 'power2.in' })
-          if (globalActions['TOPGEARS']) gsap.to(globalActions['TOPGEARS'], { timeScale: 1, duration: 1.5, ease: 'power2.in' })
         }
       }
 
@@ -1105,14 +1171,10 @@ const TourbillonAnimations = () => {
           isHoveredSouth.current = true
           document.body.style.cursor = 'pointer'
           setHoverTitle('MAD (The Philosophy / The Brand)')
-          if (globalActions['GEARS']) gsap.to(globalActions['GEARS'], { timeScale: 0, duration: 1.5, ease: 'power2.out' })
-          if (globalActions['TOPGEARS']) gsap.to(globalActions['TOPGEARS'], { timeScale: 0, duration: 1.5, ease: 'power2.out' })
         } else if (!currentlyHovered && isHoveredSouth.current) {
           isHoveredSouth.current = false
           document.body.style.cursor = 'auto'
           setHoverTitle(null)
-          if (globalActions['GEARS']) gsap.to(globalActions['GEARS'], { timeScale: 1, duration: 1.5, ease: 'power2.in' })
-          if (globalActions['TOPGEARS']) gsap.to(globalActions['TOPGEARS'], { timeScale: 1, duration: 1.5, ease: 'power2.in' })
         }
       }
 
@@ -1126,14 +1188,27 @@ const TourbillonAnimations = () => {
           isHoveredWest.current = true
           document.body.style.cursor = 'pointer'
           setHoverTitle('Food & Beverage')
-          if (globalActions['GEARS']) gsap.to(globalActions['GEARS'], { timeScale: 0, duration: 1.5, ease: 'power2.out' })
-          if (globalActions['TOPGEARS']) gsap.to(globalActions['TOPGEARS'], { timeScale: 0, duration: 1.5, ease: 'power2.out' })
         } else if (!currentlyHovered && isHoveredWest.current) {
           isHoveredWest.current = false
           document.body.style.cursor = 'auto'
           setHoverTitle(null)
-          if (globalActions['GEARS']) gsap.to(globalActions['GEARS'], { timeScale: 1, duration: 1.5, ease: 'power2.in' })
-          if (globalActions['TOPGEARS']) gsap.to(globalActions['TOPGEARS'], { timeScale: 1, duration: 1.5, ease: 'power2.in' })
+        }
+      }
+
+      // HotelHerreraLink hover
+      const hhLinkTarget = hotelHerreraLinkRef.current
+      if (hhLinkTarget) {
+        const intersects = _raycaster.intersectObject(hhLinkTarget, false)
+        const currentlyHovered = intersects.length > 0
+
+        if (currentlyHovered && !isHoveredHotelHerreraLink.current) {
+          isHoveredHotelHerreraLink.current = true
+          document.body.style.cursor = 'pointer'
+          setHoverTitle('Go to HotelHerrera.com')
+        } else if (!currentlyHovered && isHoveredHotelHerreraLink.current) {
+          isHoveredHotelHerreraLink.current = false
+          document.body.style.cursor = 'auto'
+          setHoverTitle(null)
         }
       }
     } else {
@@ -1555,6 +1630,11 @@ const TourbillonAnimations = () => {
     const onClick = (e) => {
       if (e.target.tagName !== 'CANVAS') return
       if (activeModal) {
+        return
+      }
+
+      if (isHoveredHotelHerreraLink.current) {
+        window.open('https://hotelherrera.com/', '_blank', 'noopener,noreferrer')
         return
       }
 

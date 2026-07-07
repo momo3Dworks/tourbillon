@@ -9,6 +9,7 @@ import { Leva } from 'leva'
 import { Perf } from "r3f-webgpu-perf";
 import { useExploded } from './ExplodedContext'
 import ExplodedUI from './components/ExplodedUI'
+import IntroOverlay from './components/IntroOverlay'
 import { setIsMobile as setGlobalIsMobile } from './store/audioStore'
 
 import './index.css'
@@ -74,7 +75,7 @@ function App() {
     const mobile = window.innerWidth < 768 || /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent)
     return {
       isMobile: mobile,
-      dpr: mobile ? 0.5 : Math.min(window.devicePixelRatio, 0.95),
+      dpr: mobile ? 0.7 : Math.min(window.devicePixelRatio, 0.95),
     }
   }, [])
 
@@ -94,6 +95,8 @@ function App() {
       <ExplodedViewButton />
       {/* Exploded View overlay: title, tooltip, science panel */}
       <ExplodedUI />
+      {/* Cinematic Intro Overlay */}
+      <IntroOverlay />
 
       {/* R3F WebGL Canvas */}
       <Canvas

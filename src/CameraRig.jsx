@@ -43,7 +43,7 @@ export const DESKTOP_WAYPOINTS = [
     position: [0, 100, 0],
     target: [0, 0, 0],
     fov: 80,
-    dof: { focusDistance: 0.5, focalLength: 20, bokehScale: 10 },
+    dof: { focusDistance: 0.5, focalLength: 10, bokehScale: 10 },
   },
   {
     position: [0, 70, 1],
@@ -61,25 +61,13 @@ export const DESKTOP_WAYPOINTS = [
     position: [0, 10, 2],
     target: [0, -5, 0],
     fov: 60,
-    dof: { focusDistance: 5, focalLength: 100, bokehScale: 8 },
+    dof: { focusDistance: 0.5, focalLength: 100, bokehScale: 8 },
   },
   {
-    position: [3, 6, 3],
-    target: [0, 1, 0],
+    position: [0, 5, 3.5],
+    target: [0, -0.5, 0],
     fov: 60,
-    dof: { focusDistance: 1.5, focalLength: 50, bokehScale: 8 },
-  },
-  {
-    position: [1, 5, 3],
-    target: [0, 0, 0],
-    fov: 60,
-    dof: { focusDistance: 0.1, focalLength: 60, bokehScale: 8 },
-  },
-  {
-    position: [-8, 3, 3],
-    target: [0, 0, 0],
-    fov: 98,
-    dof: { focusDistance: 5.0, focalLength: 55, bokehScale: 8 },
+    dof: { focusDistance: 0.2, focalLength: 10, bokehScale: 8 },
   },
 
 ]
@@ -116,18 +104,7 @@ export const MOBILE_WAYPOINTS = [
     fov: 60,
     dof: { focusDistance: 2.5, focalLength: 50, bokehScale: 8 },
   },
-  {
-    position: [1, 5, 9],
-    target: [0, 0, 0],
-    fov: 60,
-    dof: { focusDistance: 0.1, focalLength: 60, bokehScale: 8 },
-  },
-  {
-    position: [-8, 3, 3],
-    target: [0, 0, 0],
-    fov: 98,
-    dof: { focusDistance: 5.0, focalLength: 55, bokehScale: 8 },
-  },
+
 
 ]
 
