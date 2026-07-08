@@ -164,6 +164,7 @@ const TourbillonAnimations = () => {
     setTooltip,
     activeSection, setActiveSection,
     hoverTitle, setHoverTitle,
+    setExternalLink,
   } = useExploded()
 
   // Retrieve the cached gltfs
@@ -670,7 +671,7 @@ const TourbillonAnimations = () => {
         setNonExplodedMeshesVisible(true, activePieces, explicitlyExclude)
 
         // ── Single unified tween: all meshes dissolve at exactly the same time ──
-        const SWEEP_DURATION = 1.0
+        const SWEEP_DURATION = 1.5
         gsap.killTweensOf(progressUnified)
         gsap.to(progressUnified, {
           current: 1.0,
@@ -685,6 +686,7 @@ const TourbillonAnimations = () => {
       }
 
       // ── De-parent active root pieces ─────────────────────────────────
+      gsap.delayedCall(1.2, () => {
       const activeAnimPieces =
         isExploded === 'east' ? ANIMATED_EAST_PIECE_NAMES :
           isExploded === 'south' ? ANIMATED_SOUTH_PIECE_NAMES :
@@ -987,6 +989,7 @@ const TourbillonAnimations = () => {
           })
         }
       }
+      }) // End delayedCall
 
       // buildCollider was moved to the top of this useEffect
 
@@ -1799,7 +1802,7 @@ const TourbillonAnimations = () => {
 
       if (isExploded === 'east') {
         if (isHoveredAlquimia.current) {
-          window.open('https://hotelherrera.com/alquimia', '_blank', 'noopener,noreferrer')
+          setExternalLink({ url: 'https://hotelherrera.com/alquimia' })
           return
         }
         if (isHoveredInnerRing.current) {
@@ -1813,15 +1816,15 @@ const TourbillonAnimations = () => {
         }
       } else if (isExploded === 'north') {
         if (isHoveredNorthOutter.current) {
-          window.open('https://live.ipms247.com/booking/book-rooms-hotelherrera', '_blank', 'noopener,noreferrer')
+          setExternalLink({ url: 'https://live.ipms247.com/booking/book-rooms-hotelherrera' })
           return
         }
         if (isHoveredNorthInner.current) {
-          window.open('https://hotelherrera.com/suites-casco-viejo/', '_blank', 'noopener,noreferrer')
+          setExternalLink({ url: 'https://hotelherrera.com/suites-casco-viejo/' })
           return
         }
         if (isHoveredNorthG4.current) {
-          window.open('https://hotelherrera.com/the-reaping/', '_blank', 'noopener,noreferrer')
+          setExternalLink({ url: 'https://hotelherrera.com/the-reaping/' })
           return
         }
         if (isHoveredNorthG2.current) {
@@ -1830,7 +1833,7 @@ const TourbillonAnimations = () => {
           return
         }
         if (isHoveredNorthG3.current) {
-          window.open('https://hotelherrera.com/the-reaping/', '_blank', 'noopener,noreferrer')
+          setExternalLink({ url: 'https://hotelherrera.com/the-reaping/' })
           return
         }
       } else if (isExploded === 'south') {
@@ -1840,36 +1843,36 @@ const TourbillonAnimations = () => {
           return
         }
         if (isHoveredSouthInner.current) {
-          window.open('https://hotelherrera.com/drunk-gpting/', '_blank', 'noopener,noreferrer')
+          setExternalLink({ url: 'https://hotelherrera.com/drunk-gpting/' })
           return
         }
         if (isHoveredSouthG4.current) {
-          window.open('https://hotelherrera.com/sacred-symbols/', '_blank', 'noopener,noreferrer')
+          setExternalLink({ url: 'https://hotelherrera.com/sacred-symbols/' })
           return
         }
         if (isHoveredSouthG2.current) {
-          window.open('https://hotelherrera.com/sacred-symbols/', '_blank', 'noopener,noreferrer')
+          setExternalLink({ url: 'https://hotelherrera.com/sacred-symbols/' })
           return
         }
         if (isHoveredSouthG3.current) {
-          window.open('https://hotelherrera.com/sacred-symbols/', '_blank', 'noopener,noreferrer')
+          setExternalLink({ url: 'https://hotelherrera.com/sacred-symbols/' })
           return
         }
       } else if (isExploded === 'west') {
         if (isHoveredWestWeigth.current) {
-          window.open('https://hotelherrera.com/elrestaurant-menu/', '_blank', 'noopener,noreferrer')
+          setExternalLink({ url: 'https://hotelherrera.com/elrestaurant-menu/' })
           return
         }
         if (isHoveredGear1.current) {
-          window.open('https://hotelherrera.com/restaurant/', '_blank', 'noopener,noreferrer')
+          setExternalLink({ url: 'https://hotelherrera.com/restaurant/' })
           return
         }
         if (isHoveredG3.current) {
-          window.open('https://hotelherrera.com/themartinibar/', '_blank', 'noopener,noreferrer')
+          setExternalLink({ url: 'https://hotelherrera.com/themartinibar/' })
           return
         }
         if (isHoveredG5.current) {
-          window.open('https://hotelherrera.com/thebag/', '_blank', 'noopener,noreferrer')
+          setExternalLink({ url: 'https://hotelherrera.com/thebag/' })
           return
         }
         if (isHoveredG1.current) {
@@ -1879,7 +1882,7 @@ const TourbillonAnimations = () => {
         }
       } else if (isExploded === 'hotelherrera') {
         if (isHoveredHHLogo.current) {
-          window.open('https://hotelherrera.com/', '_blank', 'noopener,noreferrer')
+          setExternalLink({ url: 'https://hotelherrera.com/' })
           return
         }
       }

@@ -1,17 +1,18 @@
 import React, { useState } from 'react'
 import { useAudioStore, setPlayingAll } from '../store/audioStore'
 import { triggerAutoIntro, triggerAutoBack } from '../CameraRig'
+import { useExploded } from '../ExplodedContext'
 
 const Navbar = (props) => {
   const [isMenuOpen, setIsMenuOpen] = useState(false)
   const activeNavIndex = useAudioStore(s => s.activeNavIndex)
   const isPlaying = useAudioStore(s => s.isPlayingAll)
   const setIsPlaying = setPlayingAll
-  const [language, setLanguage] = useState('en')
+  const { language, setLanguage, t } = useExploded()
 
   const waypoints = [
-    { name: 'ENTRANCE', index: 0, action: () => { triggerAutoBack.current = true; triggerAutoIntro.current = false } },
-    { name: 'THE TOURBILLON', index: 1, action: () => { triggerAutoIntro.current = true; triggerAutoBack.current = false } },
+    { name: t('navbar.entrance'), index: 0, action: () => { triggerAutoBack.current = true; triggerAutoIntro.current = false } },
+    { name: t('navbar.tourbillon'), index: 1, action: () => { triggerAutoIntro.current = true; triggerAutoBack.current = false } },
   ]
 
   return (
@@ -88,13 +89,18 @@ const Navbar = (props) => {
               onMouseLeave={(e) => { e.currentTarget.style.opacity = 0.7; e.currentTarget.style.transform = 'scale(1)' }}
             >
               {isPlaying ? (
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
-                  <rect x="6" y="4" width="4" height="16" />
-                  <rect x="14" y="4" width="4" height="16" />
+                // Speaker icon (Playing)
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon>
+                  <path d="M15.54 8.46a5 5 0 0 1 0 7.07"></path>
+                  <path d="M19.07 4.93a10 10 0 0 1 0 14.14"></path>
                 </svg>
               ) : (
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
-                  <path d="M8 5v14l11-7z" />
+                // Mute icon (Paused)
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon>
+                  <line x1="23" y1="9" x2="17" y2="15"></line>
+                  <line x1="17" y1="9" x2="23" y2="15"></line>
                 </svg>
               )}
             </button>
@@ -231,16 +237,19 @@ const Navbar = (props) => {
                   padding: '10px'
                 }}
               >
-                {isPlaying ? (
-                  <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor">
-                    <rect x="6" y="4" width="4" height="16" />
-                    <rect x="14" y="4" width="4" height="16" />
-                  </svg>
-                ) : (
-                  <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor">
-                    <path d="M8 5v14l11-7z" />
-                  </svg>
-                )}
+                  {isPlaying ? (
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon>
+                      <path d="M15.54 8.46a5 5 0 0 1 0 7.07"></path>
+                      <path d="M19.07 4.93a10 10 0 0 1 0 14.14"></path>
+                    </svg>
+                  ) : (
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon>
+                      <line x1="23" y1="9" x2="17" y2="15"></line>
+                      <line x1="17" y1="9" x2="23" y2="15"></line>
+                    </svg>
+                  )}
               </button>
 
               <button

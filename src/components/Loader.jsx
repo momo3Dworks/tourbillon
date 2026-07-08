@@ -13,15 +13,16 @@ const Loader = ({ onStart }) => {
       const timer = setTimeout(() => {
         setIsReady(true)
         gsap.to(overlayRef.current, {
+          backgroundColor: 'transparent',
           opacity: 0,
-          duration: 1.0,
+          duration: 1.5,
           ease: 'power2.inOut',
           onComplete: () => {
             setVisible(false)
             if (onStart) onStart()
           }
         })
-      }, 1000)
+      }, 1500) // Slightly longer wait to ensure shaders are compiled before fading
       return () => clearTimeout(timer)
     }
   }, [progress, onStart])
@@ -59,19 +60,14 @@ const Loader = ({ onStart }) => {
             filter: 'drop-shadow(0 0 10px rgba(0, 255, 255, 0.4))'
           }}
         />
-        <svg width="200" height="200" viewBox="0 0 200 200" style={{ transform: 'rotate(-90deg)' }}>
-          <circle 
-            cx="100" cy="100" r="90" 
-            fill="none" stroke="rgba(0, 255, 255, 0.1)" strokeWidth="2" 
-          />
-          <circle 
-            cx="100" cy="100" r="90" 
-            fill="none" stroke="var(--color-cyan)" strokeWidth="2" 
-            strokeDasharray={2 * Math.PI * 90}
-            strokeDashoffset={2 * Math.PI * 90 * (1 - progress / 100)}
-            style={{ transition: 'stroke-dashoffset 0.3s ease' }}
-          />
-        </svg>
+        <div style={{
+          width: '180px',
+          height: '180px',
+          borderRadius: '50%',
+          border: '2px solid rgba(0, 255, 255, 0.1)',
+          borderTopColor: 'var(--color-cyan)',
+          animation: 'spin 1s linear infinite'
+        }} />
       </div>
     </div>
   )

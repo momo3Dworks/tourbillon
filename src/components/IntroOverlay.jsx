@@ -1,10 +1,12 @@
 import React, { useEffect, useRef, useState } from 'react'
 import { scrollProgress, triggerAutoBack } from '../CameraRig'
+import { useExploded } from '../ExplodedContext'
 
 const LAST_WAYPOINT = 4.0   // final waypoint index
 const EXIT_DELAY_MS = 2000  // 2s after arriving at last waypoint
 
 const IntroOverlay = () => {
+  const { t } = useExploded()
   const introRef = useRef(null)
   const tourbillonRef = useRef(null)
 
@@ -13,7 +15,7 @@ const IntroOverlay = () => {
   const exitStartTime = useRef(null)
   const atLastWaypoint = useRef(false)
   const isReturningRef = useRef(false)
-  
+
   const [isReturning, setIsReturning] = useState(false)
 
   useEffect(() => {
@@ -143,7 +145,7 @@ const IntroOverlay = () => {
             marginBottom: isReturning ? '0px' : '14px',
             textTransform: 'uppercase',
           }}>
-            {isReturning ? 'Come' : 'Hotel Herrera'}
+            {isReturning ? t('intro.come') : t('intro.hotelHerrera')}
           </div>
           <div style={{
             fontSize: isReturning ? '2.5rem' : '1rem',
@@ -155,7 +157,7 @@ const IntroOverlay = () => {
             textShadow: '0 2px 20px rgba(0,0,0,0.9)',
             textTransform: 'uppercase',
           }}>
-            {isReturning ? 'back soon' : 'PRESENTS'}
+            {isReturning ? t('intro.backSoon') : t('intro.presents')}
           </div>
         </div>
       </div>
@@ -182,7 +184,7 @@ const IntroOverlay = () => {
         <div style={{ position: 'relative', zIndex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
           {/* Main title */}
           <div className='MainTitleIntro'>
-            Tourbillon
+            {t('tourbillon')}
           </div>
 
           {/* Separator line */}
@@ -199,7 +201,7 @@ const IntroOverlay = () => {
 
           {/* Subtitle — letter-spacing fills the width of the line */}
           <div className='MainTitleSubtitle'>
-            Hotel Herrera Panamá Digital Embassy
+            {t('intro.subtitle')}
           </div>
         </div>
       </div>

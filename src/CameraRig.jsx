@@ -272,7 +272,7 @@ const lerp3 = (a, b, t) => new THREE.Vector3(...a).lerp(new THREE.Vector3(...b),
 
 const CameraRig = () => {
   const { camera, scene, performance } = useThree()
-  const { isExploded, activeSection } = useExploded()
+  const { isExploded, activeSection, hoverTitle } = useExploded()
 
   const explodedCam = useControls('Exploded View Camera', {
     posX: { value: 0, min: -100, max: 100, step: 0.5, label: 'Position X' },
@@ -293,6 +293,7 @@ const CameraRig = () => {
     perWaypointDof: { value: true, label: 'Per-Waypoint DoF & FOV' },
   })
   const perWaypointDofRef = useRef(false)
+  const explodeTimer = useRef(0)
   useEffect(() => {
     perWaypointDofRef.current = perWaypointDof
     waypointCameraState.perWaypointEnabled = perWaypointDof
@@ -334,7 +335,7 @@ const CameraRig = () => {
         lastTouchY = touchY
 
         // Multiplier to match wheel speed feel on touch devices
-        velocity.current += deltaY * SCROLL_SENSITIVITY * 12.0
+        velocity.current += deltaY * SCROLL_SENSITIVITY * 6.0 // Reduced from 12.0 for smoother mobile control
       }
     }
 
@@ -476,7 +477,18 @@ const CameraRig = () => {
       targetBokeh = THREE.MathUtils.lerp(dA.bokehScale, dB.bokehScale, et)
     }
 
+    // Add main screen hover zoom
+    if (!isExploded && hoverTitle && progress.current >= 3.9) {
+      targetFov -= 3; // Subtle zoom
+    }
+
     if (isExploded) {
+      explodeTimer.current += delta
+    } else {
+      explodeTimer.current = 0
+    }
+
+    if (isExploded && explodeTimer.current > 1.2) {
       targetPos = new THREE.Vector3(explodedCam.posX, explodedCam.posY, explodedCam.posZ)
       targetLookAt = new THREE.Vector3(explodedCam.targetX, explodedCam.targetY, explodedCam.targetZ)
       targetFov = explodedCam.fov
@@ -518,7 +530,22 @@ const CameraRig = () => {
         parallaxOffset.current.set(0, 0, 0)
       }
     } else {
-      parallaxOffset.current.set(0, 0, 0)
+      // Main screen parallax at the final waypoint
+      if (progress.current >= 3.9) {
+        const right = new THREE.Vector3(0.1, 0, 0).applyQuaternion(camera.quaternion)
+        const up = new THREE.Vector3(0, 0.1, 0).applyQuaternion(camera.quaternion)
+
+        // Use a fixed intensity for the main screen (e.g. 3.0)
+        const targetParallax = new THREE.Vector3()
+          .addScaledVector(right, state.mouse.x * 3.0)
+          .addScaledVector(up, state.mouse.y * 3.0)
+
+        parallaxOffset.current.lerp(targetParallax, 1 - Math.pow(0.02, delta))
+        targetPos.add(parallaxOffset.current)
+      } else {
+        parallaxOffset.current.lerp(new THREE.Vector3(0, 0, 0), 1 - Math.pow(0.05, delta))
+        targetPos.add(parallaxOffset.current)
+      }
     }
 
     const CATCH_UP = 1 - Math.pow(0.02, delta)   // ~98 % catch-up per second

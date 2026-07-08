@@ -49,6 +49,25 @@ const SpatialAudioController = () => {
   const prevAutoIntro = useRef(false)
   const hasTriggeredClickAudios = useRef(false)
 
+  // Pause/resume all audio when the tab loses/gains focus
+  useEffect(() => {
+    const onVisibilityChange = () => {
+      const hidden = document.hidden
+      const { isPlayingAll } = audioStore.getState()
+      if (hidden) {
+        // Tab hidden — pause everything
+        if (vaultAudioRef.current && !vaultAudioRef.current.paused) vaultAudioRef.current.pause()
+        if (gearsAudioRef.current && !gearsAudioRef.current.paused) gearsAudioRef.current.pause()
+        if (clickPlayerReadyRef.current && clickPlayerRef.current && typeof clickPlayerRef.current.pauseVideo === 'function') clickPlayerRef.current.pauseVideo()
+        if (proximityPlayerReadyRef.current && proximityPlayerRef.current && typeof proximityPlayerRef.current.pauseVideo === 'function') proximityPlayerRef.current.pauseVideo()
+        if (proximityPlayer2ReadyRef.current && proximityPlayer2Ref.current && typeof proximityPlayer2Ref.current.pauseVideo === 'function') proximityPlayer2Ref.current.pauseVideo()
+      }
+      // Resume is handled naturally by the useFrame loop when isTabVisible becomes true again
+    }
+    document.addEventListener('visibilitychange', onVisibilityChange)
+    return () => document.removeEventListener('visibilitychange', onVisibilityChange)
+  }, [])
+
   // 1. Initialise local Audio objects
   useEffect(() => {
     vaultAudioRef.current = new Audio('/VaultDoorOpen.mp3')

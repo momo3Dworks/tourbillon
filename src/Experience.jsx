@@ -90,7 +90,12 @@ const PostProcessing = ({ bloom, dof, color, vignette, ca, ssr }) => {
 
   // Build the full composer once per renderer/scene/camera
   const passes = useMemo(() => {
-    const comp = new EffectComposer(gl)
+    // Enable MSAA for smoother edges (desktop aliasing fix)
+    const renderTarget = new THREE.WebGLRenderTarget(size.width, size.height, {
+      samples: gl.capabilities.isWebGL2 ? 4 : 0,
+      type: THREE.HalfFloatType,
+    })
+    const comp = new EffectComposer(gl, renderTarget)
 
     // 1. Scene render
     const renderPass = new RenderPass(scene, camera)

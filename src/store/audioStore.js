@@ -11,6 +11,7 @@ let state = {
   activeNavIndex: 0,
   isMobile: false,
   mobileTooltipFontSize: 9,
+  isTabVisible: true,
 }
 
 const listeners = new Set()
@@ -47,3 +48,4 @@ export const setVolumeGearsRandom = (vol) => audioStore.setState({ volumeGearsRa
 export const setActiveNavIndex = (idx) => audioStore.setState({ activeNavIndex: idx })
 export const setIsMobile = (isMobile) => audioStore.setState({ isMobile })
 export const setMobileTooltipFontSize = (size) => audioStore.setState({ mobileTooltipFontSize: size })
+export const setIsTabVisible = (isVisible) => audioStore.setState({ isTabVisible: isVisible })

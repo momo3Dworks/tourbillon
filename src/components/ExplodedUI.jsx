@@ -2,6 +2,7 @@ import React, { useEffect, useRef, useState } from 'react'
 import { useExploded } from '../ExplodedContext'
 import { USE_AUTO_INTRO, triggerAutoIntro, triggerAutoBack } from '../CameraRig'
 import { useAudioStore } from '../store/audioStore'
+import { OrnamentCorner, OrnamentCenterTop, OrnamentCenterBottom } from './CornerOrnament'
 
 // ─── Tooltip ────────────────────────────────────────────────────────────────
 const Tooltip = () => {
@@ -49,6 +50,10 @@ const Tooltip = () => {
         animation: 'tooltipFadeIn 0.15s ease forwards',
       }}
     >
+      <OrnamentCorner position="top-left" size={22} opacity={0.7} />
+      <OrnamentCorner position="top-right" size={22} opacity={0.7} />
+      <OrnamentCorner position="bottom-left" size={22} opacity={0.7} />
+      <OrnamentCorner position="bottom-right" size={22} opacity={0.7} />
       {tooltip.text}
     </div>
   )
@@ -56,7 +61,7 @@ const Tooltip = () => {
 
 // ─── Left-Side Info Panel ────────────────────────────────────────────────────
 const InfoModal = () => {
-  const { activeModal, setActiveModal, setActiveSection, isExploded } = useExploded()
+  const { activeModal, setActiveModal, setActiveSection, isExploded, t } = useExploded()
   const { isMobile } = useAudioStore()
   const [visible, setVisible] = useState(false)
 
@@ -81,25 +86,25 @@ const InfoModal = () => {
   let titleBottom = ''
   let sectionTag = ''
   if (activeModal === 'science') {
-    titleTop = 'The Science'
-    titleBottom = '/ Information'
-    sectionTag = 'Knowledge'
+    titleTop = t('infoModal.science')
+    titleBottom = t('infoModal.info')
+    sectionTag = t('infoModal.knowledge')
   } else if (activeModal === 'suites') {
-    titleTop = 'Book a Room'
+    titleTop = t('infoModal.bookRoom')
     titleBottom = ''
-    sectionTag = 'Accommodation'
+    sectionTag = t('infoModal.accommodation')
   } else if (activeModal === 'adventures') {
-    titleTop = 'THEsuites'
+    titleTop = t('infoModal.suites')
     titleBottom = ''
-    sectionTag = 'Experiences'
+    sectionTag = t('infoModal.experiences')
   } else if (activeModal === 'events') {
-    titleTop = 'Events'
-    titleBottom = '/ General Info'
-    sectionTag = 'Community'
+    titleTop = t('infoModal.events')
+    titleBottom = t('infoModal.generalInfo')
+    sectionTag = t('infoModal.community')
   } else if (activeModal === 'nootropics') {
-    titleTop = 'The Store'
-    titleBottom = '(Buy Nootropics)'
-    sectionTag = 'Coming Soon'
+    titleTop = t('infoModal.store')
+    titleBottom = ''
+    sectionTag = t('infoModal.shop')
   } else if (activeModal === 'adventures_coming_soon') {
     titleTop = 'THEadventures'
     titleBottom = ''
@@ -170,22 +175,13 @@ const InfoModal = () => {
             : 'linear-gradient(90deg, rgba(0,255,255,0.7) 0%, rgba(0,255,255,0.15) 60%, transparent 100%)',
         }} />
 
-        {/* Decorative corner — top right */}
-        <div style={{
-          position: 'absolute', top: '18px', right: '18px',
-          width: '36px', height: '36px',
-          borderTop: '1px solid rgba(0,255,255,0.55)',
-          borderRight: '1px solid rgba(0,255,255,0.55)',
-          borderRadius: '0 4px 0 0',
-        }} />
-        {/* Decorative corner — bottom right */}
-        <div style={{
-          position: 'absolute', bottom: '18px', right: '18px',
-          width: '36px', height: '36px',
-          borderBottom: '1px solid rgba(0,255,255,0.55)',
-          borderRight: '1px solid rgba(0,255,255,0.55)',
-          borderRadius: '0 0 4px 0',
-        }} />
+        {/* Premium SVG Decorative Corners */}
+        <OrnamentCorner position="top-left" size={44} opacity={0.8} />
+        <OrnamentCorner position="top-right" size={44} opacity={0.8} />
+        <OrnamentCorner position="bottom-left" size={44} opacity={0.8} />
+        <OrnamentCorner position="bottom-right" size={44} opacity={0.8} />
+        {/* Center top/bottom ornaments along the accent lines */}
+        <OrnamentCenterBottom size={60} opacity={0.55} />
 
         {/* Close X */}
         <button
@@ -294,7 +290,7 @@ const InfoModal = () => {
               textShadow: '0 0 20px rgba(0,255,255,0.8)',
               textAlign: 'center'
             }}>
-              COMING SOON
+              {t('infoModal.comingSoon')}
             </h3>
           </div>
         ) : (
@@ -307,7 +303,7 @@ const InfoModal = () => {
             margin: '0 0 auto 0',
             maxWidth: '380px',
           }}>
-            Content coming soon.
+            {t('infoModal.contentComingSoon')}
           </p>
         )}
 
@@ -345,7 +341,122 @@ const InfoModal = () => {
               e.currentTarget.style.boxShadow = 'none'
             }}
           >
-            Close
+            {t('infoModal.close')}
+          </button>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+// ─── External Link Modal ──────────────────────────────────────────────────────
+const ExternalLinkModal = () => {
+  const { externalLink, setExternalLink, t } = useExploded()
+
+  if (!externalLink) return null;
+
+  return (
+    <div style={{
+      position: 'fixed',
+      top: 0, left: 0, right: 0, bottom: 0,
+      backgroundColor: 'rgba(0,0,0,0.85)',
+      backdropFilter: 'blur(10px)',
+      display: 'flex',
+      justifyContent: 'center',
+      alignItems: 'center',
+      zIndex: 9999,
+      animation: 'fadeIn 0.3s ease',
+    }}>
+      <div style={{
+        position: 'relative',
+        backgroundColor: '#111',
+        border: '1px solid rgba(0,255,255,0.2)',
+        borderRadius: '8px',
+        padding: '40px',
+        maxWidth: '500px',
+        textAlign: 'center',
+        boxShadow: '0 20px 50px rgba(0,0,0,0.5), 0 0 30px rgba(0,255,255,0.1)'
+      }}>
+        <OrnamentCorner position="top-left" size={44} opacity={0.85} />
+        <OrnamentCorner position="top-right" size={44} opacity={0.85} />
+        <OrnamentCorner position="bottom-left" size={44} opacity={0.85} />
+        <OrnamentCorner position="bottom-right" size={44} opacity={0.85} />
+        <OrnamentCenterBottom size={55} opacity={0.6} />
+        
+        <h2 style={{
+          fontFamily: 'Outfit, sans-serif',
+          color: '#fff',
+          fontSize: '24px',
+          fontWeight: 400,
+          marginBottom: '20px'
+        }}>
+          {t('externalLinkModal.title')}
+        </h2>
+        <p style={{
+          fontFamily: 'Inter, sans-serif',
+          color: 'rgba(255,255,255,0.6)',
+          fontSize: '15px',
+          lineHeight: '1.6',
+          marginBottom: '40px'
+        }}>
+          {t('externalLinkModal.description')}<br/>
+          {t('externalLinkModal.destination')} <span style={{color: '#00ffff'}}>{externalLink.url}</span>
+        </p>
+
+        <div style={{ display: 'flex', gap: '20px', justifyContent: 'center' }}>
+          <button
+            onClick={() => setExternalLink(null)}
+            style={{
+              padding: '12px 24px',
+              backgroundColor: 'transparent',
+              border: '1px solid rgba(255,255,255,0.3)',
+              color: '#fff',
+              borderRadius: '4px',
+              cursor: 'pointer',
+              fontFamily: 'Inter, sans-serif',
+              fontSize: '12px',
+              textTransform: 'uppercase',
+              letterSpacing: '2px',
+              transition: 'all 0.2s',
+            }}
+            onMouseEnter={e => e.currentTarget.style.borderColor = '#fff'}
+            onMouseLeave={e => e.currentTarget.style.borderColor = 'rgba(255,255,255,0.3)'}
+          >
+            <OrnamentCorner position="top-left" size={20} opacity={0.9} style={{ filter: 'brightness(0) invert(1)' }} />
+            <OrnamentCorner position="bottom-right" size={20} opacity={0.9} style={{ filter: 'brightness(0) invert(1)' }} />
+            {t('externalLinkModal.stayHere')}
+          </button>
+          <button
+            onClick={() => {
+              window.open(externalLink.url, '_blank', 'noopener,noreferrer')
+              setExternalLink(null)
+            }}
+            style={{
+              padding: '12px 24px',
+              backgroundColor: 'rgba(0,255,255,0.1)',
+              border: '1px solid #00ffff',
+              color: '#00ffff',
+              borderRadius: '4px',
+              cursor: 'pointer',
+              fontFamily: 'Inter, sans-serif',
+              fontSize: '12px',
+              textTransform: 'uppercase',
+              letterSpacing: '2px',
+              transition: 'all 0.2s',
+              boxShadow: '0 0 15px rgba(0,255,255,0.2)'
+            }}
+            onMouseEnter={e => {
+              e.currentTarget.style.backgroundColor = 'rgba(0,255,255,0.2)'
+              e.currentTarget.style.boxShadow = '0 0 25px rgba(0,255,255,0.4)'
+            }}
+            onMouseLeave={e => {
+              e.currentTarget.style.backgroundColor = 'rgba(0,255,255,0.1)'
+              e.currentTarget.style.boxShadow = '0 0 15px rgba(0,255,255,0.2)'
+            }}
+          >
+            <OrnamentCorner position="top-left" size={20} opacity={0.9} />
+            <OrnamentCorner position="bottom-right" size={20} opacity={0.9} />
+            {t('externalLinkModal.proceed')}
           </button>
         </div>
       </div>
@@ -355,8 +466,29 @@ const InfoModal = () => {
 
 // ─── ExplodedUI — root overlay ────────────────────────────────────────────────
 const ExplodedUI = () => {
-  const { isExploded, hoverTitle } = useExploded()
+  const { 
+    isExploded, 
+    setExploded, 
+    hoverPieceTitle, 
+    hoverTitle,
+    language,
+    externalLink,
+    t
+  } = useExploded()
+
+  const tooltipRef = useRef(null)
   const [titleVisible, setTitleVisible] = useState(false)
+
+  useEffect(() => {
+    const handleMouseMove = (e) => {
+      if (tooltipRef.current) {
+        tooltipRef.current.style.left = `${e.clientX + 20}px`
+        tooltipRef.current.style.top = `${e.clientY + 20}px`
+      }
+    }
+    window.addEventListener('mousemove', handleMouseMove)
+    return () => window.removeEventListener('mousemove', handleMouseMove)
+  }, [])
 
   useEffect(() => {
     if (isExploded) {
@@ -401,7 +533,7 @@ const ExplodedUI = () => {
             userSelect: 'none',
           }}
         >
-          {isExploded === 'east' ? 'THEapothecary' : isExploded === 'north' ? 'THEhotel' : isExploded === 'south' ? 'MAD (The Philosophy / The Brand)' : isExploded === 'hotelherrera' ? 'Hotel Herrera' : 'Food & Beverage'}
+          {isExploded === 'east' ? t('explodedUI.brandApothecary') : isExploded === 'north' ? t('explodedUI.brandHotel') : isExploded === 'south' ? t('explodedUI.brandPhilosophy') : isExploded === 'hotelherrera' ? t('explodedUI.brandHotelHerrera') : t('explodedUI.brandFoodBeverage')}
         </h1>
       </div>
 
@@ -412,7 +544,8 @@ const ExplodedUI = () => {
       {USE_AUTO_INTRO ? (
         <button
           id="scroll-tooltip"
-          onClick={() => {
+          onClick={(e) => {
+            e.stopPropagation()
             triggerAutoIntro.current = true
           }}
           onMouseEnter={e => { e.currentTarget.style.boxShadow = '0 0 35px rgba(0,255,255,0.75)' }}
@@ -437,9 +570,14 @@ const ExplodedUI = () => {
             transition: 'box-shadow 0.3s ease, opacity 0.3s ease',
             pointerEvents: 'auto',
             opacity: 1, // Will be controlled by CameraRig
+            isolation: 'isolate',
           }}
         >
-          Meet The Tourbillon
+          <OrnamentCorner position="top-left" size={28} opacity={0.8} />
+          <OrnamentCorner position="top-right" size={28} opacity={0.8} />
+          <OrnamentCorner position="bottom-left" size={28} opacity={0.8} />
+          <OrnamentCorner position="bottom-right" size={28} opacity={0.8} />
+          {t('explodedUI.meetTourbillon')}
         </button>
       ) : (
         <div
@@ -471,14 +609,15 @@ const ExplodedUI = () => {
             backdropFilter: 'blur(10px)',
           }}
         >
-          Scroll down to meet THETourbillon
+          {t('explodedUI.scrollDown')}
         </div>
       )}
 
       {/* ── Back to Entrance Button ───────────────────────────── */}
       <button
         id="back-to-entrance-btn"
-        onClick={() => {
+        onClick={(e) => {
+          e.stopPropagation()
           triggerAutoBack.current = true
         }}
         onMouseEnter={e => { e.currentTarget.style.boxShadow = '0 0 35px rgba(0,255,255,0.75)' }}
@@ -502,38 +641,36 @@ const ExplodedUI = () => {
           transition: 'box-shadow 0.3s ease, opacity 0.3s ease',
           pointerEvents: 'none',
           opacity: 0, // Will be controlled by CameraRig
+          isolation: 'isolate',
         }}
       >
-        ↑ Back to Entrance
+        <OrnamentCorner position="top-left" size={28} opacity={0.8} />
+        <OrnamentCorner position="top-right" size={28} opacity={0.8} />
+        <OrnamentCorner position="bottom-left" size={28} opacity={0.8} />
+        <OrnamentCorner position="bottom-right" size={28} opacity={0.8} />
+        {t('explodedUI.backToEntrance')}
       </button>
 
       {/* ── Hover Title Tooltip ───────────────────────────── */}
       <div
+        ref={tooltipRef}
         style={{
           position: 'fixed',
           whiteSpace: 'nowrap',
-          backgroundColor: 'rgba(2, 70, 13, 0.4)',
-          padding: '8px 20px',
-          borderRadius: '5px',
-          borderLeft: '2px solid rgb(0, 255, 255)',
-          bottom: '10vh',
-          left: '50%',
-          transform: 'translateX(-50%)',
-          color: 'rgb(0, 255, 255)',
+          backgroundColor: 'rgba(255, 255, 255, 0.95)',
+          padding: '10px 20px',
+          borderRadius: '6px',
+          boxShadow: '0 15px 35px rgba(0,0,0,0.3)',
+          color: '#111',
           fontFamily: 'Outfit, sans-serif',
-          fontWeight: 300,
-          letterSpacing: '2px',
-          fontSize: '1.3rem',
-          width: 'auto',
-          backdropFilter: 'blur(10px)',
-          textShadow: 'rgba(0, 255, 255, 0.6) 0px 0px 10px',
+          fontWeight: 500,
+          letterSpacing: '1px',
+          fontSize: '1.1rem',
           pointerEvents: 'none',
           opacity: hoverTitle && !isExploded ? 1 : 0,
-          transition: 'opacity 0.3s',
-          zIndex: 10,
-          display: 'flex',
-          alignItems: 'center',
-          gap: '12px',
+          transition: 'opacity 0.2s ease',
+          zIndex: 1000,
+          transform: 'translate(0, 0)', // Reset default transform
         }}
       >
         {hoverTitle}
@@ -541,6 +678,9 @@ const ExplodedUI = () => {
 
       {/* ── Left-side section panel ───────────────────────── */}
       <InfoModal />
+
+      {/* ── External Link Redirect Modal ──────────────────── */}
+      <ExternalLinkModal />
 
       {/* ── Keyframe CSS ──────────────────────────────────── */}
       <style>{`

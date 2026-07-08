@@ -10,7 +10,7 @@ import { Perf } from "r3f-webgpu-perf";
 import { useExploded } from './ExplodedContext'
 import ExplodedUI from './components/ExplodedUI'
 import IntroOverlay from './components/IntroOverlay'
-import { setIsMobile as setGlobalIsMobile } from './store/audioStore'
+import { setIsMobile as setGlobalIsMobile, setIsTabVisible as setGlobalIsTabVisible } from './store/audioStore'
 
 import './index.css'
 
@@ -54,8 +54,19 @@ const ExplodedViewButton = () => {
 function App() {
   const [ready, setReady] = useState(true)
   const [hasStarted, setHasStarted] = useState(false)
+  const [isTabVisible, setIsTabVisible] = useState(true)
   // Press H to toggle Leva panel visibility
   const [levaHidden, setLevaHidden] = useState(true)
+
+  useEffect(() => {
+    const onVisibilityChange = () => {
+      const visible = !document.hidden
+      setIsTabVisible(visible)
+      setGlobalIsTabVisible(visible)
+    }
+    window.addEventListener('visibilitychange', onVisibilityChange)
+    return () => window.removeEventListener('visibilitychange', onVisibilityChange)
+  }, [])
 
   useEffect(() => {
     const onKey = (e) => {
@@ -75,7 +86,8 @@ function App() {
     const mobile = window.innerWidth < 768 || /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent)
     return {
       isMobile: mobile,
-      dpr: mobile ? 0.7 : Math.min(window.devicePixelRatio, 0.95),
+      // Boost mobile DPR slightly for clarity without killing performance
+      dpr: mobile ? [1, 1.25] : [1, Math.min(window.devicePixelRatio, 1.5)],
     }
   }, [])
 
@@ -103,7 +115,7 @@ function App() {
         shadows
         dpr={dpr}
         performance={{ min: isMobile ? 0.5 : 0.75, max: isMobile ? 0.75 : 0.95, debounce: 200 }}
-        frameloop={(ready && hasStarted) ? 'always' : 'never'}
+        frameloop={(ready && hasStarted && isTabVisible) ? 'always' : 'never'}
       >
         <Perf minimal={false} style={{ display: 'none' }} />
         {/* Camera starts at waypoint 0 position. FOV 80 for mobile, 60 for desktop */}
