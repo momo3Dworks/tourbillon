@@ -450,6 +450,20 @@ const FadeIn = ({ delayMs = 1500 }) => {
 const Experience = () => {
   const controls = useLevaControls()
   const { ambient, dirLight, shadow, env, bloom, dof, color, vignette, ca, transmission, ssr } = controls
+  const dirLightRef = useRef()
+
+  useFrame((state) => {
+    if (dirLightRef.current) {
+      if (dirLight.animate) {
+        const time = state.clock.elapsedTime * dirLight.speed
+        dirLightRef.current.position.x = dirLight.position[0] + Math.cos(time) * dirLight.radius
+        dirLightRef.current.position.z = dirLight.position[2] + Math.sin(time) * dirLight.radius
+        dirLightRef.current.position.y = dirLight.position[1]
+      } else {
+        dirLightRef.current.position.set(...dirLight.position)
+      }
+    }
+  })
 
   return (
     <>
@@ -475,6 +489,7 @@ const Experience = () => {
       )}
       {dirLight.enabled && (
         <directionalLight
+          ref={dirLightRef}
           position={dirLight.position}
           intensity={dirLight.intensity}
           color={dirLight.color}

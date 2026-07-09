@@ -47,13 +47,18 @@ const useLevaControls = () => {
   // ── Directional Light ──────────────────────────────────────────
   const dirLightControls = useControls('Directional Light', {
     enabled: { value: true, label: 'Enabled' },
-    intensity: { value: 8, min: 0, max: 50, step: 0.1, label: 'Intensity' },
+    intensity: { value: 4.3, min: 0, max: 50, step: 0.1, label: 'Intensity' },
     color: { value: '#ffeedd', label: 'Color' },
     position: folder({
-      x: { value: 4, min: -100, max: 100, step: 0.5, label: 'X' },
-      y: { value: 5, min: -100, max: 200, step: 0.5, label: 'Y' },
-      z: { value: 9.5, min: -100, max: 100, step: 0.5, label: 'Z' },
+      x: { value: 0.0, min: -100, max: 100, step: 0.5, label: 'X' },
+      y: { value: 11., min: -100, max: 200, step: 0.5, label: 'Y' },
+      z: { value: -2, min: -100, max: 100, step: 0.5, label: 'Z' },
     }),
+    orbit: folder({
+      animate: { value: true, label: 'Orbit Animation' },
+      speed: { value: 0.05, min: -5, max: 5, step: 0.1, label: 'Orbit Speed' },
+      radius: { value: 10, min: 0, max: 50, step: 0.5, label: 'Orbit Radius' },
+    })
   })
 
   // ── Ambient Light ──────────────────────────────────────────────
@@ -184,6 +189,9 @@ const useLevaControls = () => {
       intensity: dirLightControls.intensity,
       color: dirLightControls.color,
       position: [dirLightControls.x, dirLightControls.y, dirLightControls.z],
+      animate: dirLightControls.animate,
+      speed: dirLightControls.speed,
+      radius: dirLightControls.radius,
     },
     ambient: ambientControls,
     shadow: shadowControls,

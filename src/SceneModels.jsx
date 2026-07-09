@@ -134,6 +134,7 @@ const SceneModels = ({
 
   // TOP Mesh Texture Controls
   const topTextureConfig = useControls('TOP Mesh Textures', {
+    colorTint: { value: '#ffffff', label: 'Color Tint' },
     colorMapRotation: { value: 0, min: -Math.PI, max: Math.PI, step: 0.001, label: 'Color Rotation' },
     colorMapScaleU: { value: 50, min: 0.01, max: 200, step: 0.01, label: 'Color Scale U' },
     colorMapScaleV: { value: 50, min: 0.01, max: 200, step: 0.01, label: 'Color Scale V' },
@@ -145,6 +146,24 @@ const SceneModels = ({
   // Load external textures for the TOP mesh
   const topColorMap = useLoader(TextureLoader, '/textures/TopGears2_Color.webp')
   const topNormalMap = useLoader(TextureLoader, '/textures/TopGears_Normals.webp')
+
+  // ── TourbillonFloor (CenterPivotTable / CenterPivotTable_1) Texture Controls ──
+  // Change the paths below to swap textures without touching any other code.
+  const FLOOR_COLOR_MAP_PATH = '/textures/Floor_Color.webp'
+  const FLOOR_NORMAL_MAP_PATH = '/textures/Carbon1_Normals.png'
+
+  const floorTextureConfig = useControls('TourbillonFloor Textures', {
+    colorTint: { value: '#51ff3aff', label: 'Color Tint' },
+    colorMapRotation: { value: 0, min: -Math.PI, max: Math.PI, step: 0.001, label: 'Color Rotation' },
+    colorMapScaleU: { value: 10, min: 0.01, max: 200, step: 0.01, label: 'Color Scale U' },
+    colorMapScaleV: { value: 10, min: 0.01, max: 200, step: 0.01, label: 'Color Scale V' },
+    normalMapRotation: { value: 0, min: -Math.PI, max: Math.PI, step: 0.001, label: 'Normal Rotation' },
+    normalMapScaleU: { value: 10, min: 0.01, max: 200, step: 0.01, label: 'Normal Scale U' },
+    normalMapScaleV: { value: 10, min: 0.01, max: 200, step: 0.01, label: 'Normal Scale V' },
+  })
+
+  const floorColorMap = useLoader(TextureLoader, FLOOR_COLOR_MAP_PATH)
+  const floorNormalMap = useLoader(TextureLoader, FLOOR_NORMAL_MAP_PATH)
 
   // Setup VaultDoor Animations
   const vaultDoorAnims = useAnimations(vaultDoor.animations, vaultDoor.scene)
@@ -470,6 +489,7 @@ const SceneModels = ({
       topColorMap.center.set(0.5, 0.5)   // pivot at center for rotation
       topColorMap.needsUpdate = true
       mat.map = topColorMap
+      mat.color.set(topTextureConfig.colorTint)
 
       // ── Normal Map ─────────────────────────────────────────────────────────
       if (mat.normalMap && mat.normalMap !== topNormalMap) mat.normalMap.dispose()
@@ -494,6 +514,67 @@ const SceneModels = ({
     topTextureConfig.normalMapRotation,
     topTextureConfig.normalMapScaleU,
     topTextureConfig.normalMapScaleV,
+  ])
+
+  // ── Apply external textures to TourbillonFloor / CenterPivotTable mesh ──────
+  useEffect(() => {
+    if (!floorColorMap || !floorNormalMap) return
+
+    tourbillonSystem.scene.traverse((child) => {
+      if (!child.isMesh) return
+
+      // Match by mesh name or material name (GLB may name it either way)
+      const meshMatch = child.name === 'CenterPivotTable' || child.name === 'CenterPivotTable_1'
+      const matArray = Array.isArray(child.material) ? child.material : [child.material]
+      const matMatch = matArray.some(
+        m => m.name === 'TourbillonFloor' || m.name === 'CenterPivotTable' || m.name === 'CenterPivotTable_1'
+      )
+      if (!meshMatch && !matMatch) return
+
+      // Find the specific material slot(s) to patch
+      matArray.forEach((mat) => {
+        const isTarget =
+          mat.name === 'TourbillonFloor' ||
+          mat.name === 'CenterPivotTable' ||
+          mat.name === 'CenterPivotTable_1' ||
+          meshMatch // if mesh name matched, patch all materials on it
+        if (!isTarget) return
+
+        // ── Color Map ────────────────────────────────────────────────────────
+        if (mat.map && mat.map !== floorColorMap) mat.map.dispose()
+        floorColorMap.wrapS = THREE.RepeatWrapping
+        floorColorMap.wrapT = THREE.RepeatWrapping
+        floorColorMap.colorSpace = THREE.SRGBColorSpace
+        floorColorMap.rotation = floorTextureConfig.colorMapRotation
+        floorColorMap.repeat.set(floorTextureConfig.colorMapScaleU, floorTextureConfig.colorMapScaleV)
+        floorColorMap.center.set(0.5, 0.5)
+        floorColorMap.needsUpdate = true
+        mat.map = floorColorMap
+        mat.color.set(floorTextureConfig.colorTint)
+
+        // ── Normal Map ───────────────────────────────────────────────────────
+        if (mat.normalMap && mat.normalMap !== floorNormalMap) mat.normalMap.dispose()
+        floorNormalMap.wrapS = THREE.RepeatWrapping
+        floorNormalMap.wrapT = THREE.RepeatWrapping
+        floorNormalMap.rotation = floorTextureConfig.normalMapRotation
+        floorNormalMap.repeat.set(floorTextureConfig.normalMapScaleU, floorTextureConfig.normalMapScaleV)
+        floorNormalMap.center.set(0.5, 0.5)
+        floorNormalMap.needsUpdate = true
+        mat.normalMap = floorNormalMap
+
+        mat.needsUpdate = true
+      })
+    })
+  }, [
+    tourbillonSystem,
+    floorColorMap,
+    floorNormalMap,
+    floorTextureConfig.colorMapRotation,
+    floorTextureConfig.colorMapScaleU,
+    floorTextureConfig.colorMapScaleV,
+    floorTextureConfig.normalMapRotation,
+    floorTextureConfig.normalMapScaleU,
+    floorTextureConfig.normalMapScaleV,
   ])
 
   // ── Aplicar materiales emissive para que el Bloom tenga objetivos ──────────

@@ -40,7 +40,7 @@ export const FRICTION = 0.1   // used as Math.pow(FRICTION, delta)
 // ─────────────────────────────────────────────────────────────────────────────
 export const DESKTOP_WAYPOINTS = [
   {
-    position: [0, 100, 0],
+    position: [0, 100, 0.001],
     target: [0, 0, 0],
     fov: 80,
     dof: { focusDistance: 0.5, focalLength: 10, bokehScale: 10 },
@@ -75,7 +75,7 @@ export const DESKTOP_WAYPOINTS = [
 
 export const MOBILE_WAYPOINTS = [
   {
-    position: [0, 108, 0],
+    position: [0, 108, 0.001],
     target: [0, 0, 0],
     fov: 80,
     dof: { focusDistance: 2.8, focalLength: 40, bokehScale: 10 },
@@ -388,6 +388,10 @@ const CameraRig = () => {
         velocity.current = 0
       } else {
         triggerAutoBack.current = false
+        // Snap lookAt immediately to wp0 target to prevent post-lerp drift
+        const wp0 = waypointsList[0]
+        currentLookAt.current.set(...wp0.target)
+        camera.lookAt(currentLookAt.current)
       }
     } else {
       // Integrate velocity into progress (manual scroll mode)
