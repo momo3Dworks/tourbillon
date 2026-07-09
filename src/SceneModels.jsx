@@ -150,10 +150,10 @@ const SceneModels = ({
   // ── TourbillonFloor (CenterPivotTable / CenterPivotTable_1) Texture Controls ──
   // Change the paths below to swap textures without touching any other code.
   const FLOOR_COLOR_MAP_PATH = '/textures/Floor_Color.webp'
-  const FLOOR_NORMAL_MAP_PATH = '/textures/Carbon1_Normals.png'
+  const FLOOR_NORMAL_MAP_PATH = '/textures/Floor_Normals.webp'
 
   const floorTextureConfig = useControls('TourbillonFloor Textures', {
-    colorTint: { value: '#51ff3aff', label: 'Color Tint' },
+    colorTint: { value: '#ffffffff', label: 'Color Tint' },
     colorMapRotation: { value: 0, min: -Math.PI, max: Math.PI, step: 0.001, label: 'Color Rotation' },
     colorMapScaleU: { value: 10, min: 0.01, max: 200, step: 0.01, label: 'Color Scale U' },
     colorMapScaleV: { value: 10, min: 0.01, max: 200, step: 0.01, label: 'Color Scale V' },
@@ -429,8 +429,9 @@ const SceneModels = ({
     SCENE_GROUPS.forEach(({ scn, progressRef }) => {
       scn.traverse((child) => {
         if (child.isMesh) {
-          child.castShadow = true
-          child.receiveShadow = true
+          const isCollider = child.name === 'HotelHerreraLink'
+          child.castShadow = !isCollider
+          child.receiveShadow = !isCollider
 
           if (child.material) {
             // Skip glass transmission materials — their shader must not be modified

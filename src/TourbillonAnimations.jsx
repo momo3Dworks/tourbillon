@@ -409,6 +409,8 @@ const TourbillonAnimations = () => {
 
       if (child.name === 'HotelHerreraLink') {
         hotelHerreraLinkRef.current = child;
+        child.castShadow = false;
+        child.receiveShadow = false;
         child.visible = false;
       }
 
