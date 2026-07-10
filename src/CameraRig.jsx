@@ -286,7 +286,7 @@ const CameraRig = () => {
     focusDistance: { value: 0.1, min: 0.1, max: 100, step: 0.1, label: 'Default Focus Distance' },
     focalLength: { value: 1, min: 1, max: 150, step: 1, label: 'Default Focal Length' },
     bokehScale: { value: 0.0, min: 0, max: 20, step: 0.1, label: 'Default Bokeh Scale' },
-    parallaxIntensity: { value: 0.02, min: 0, max: 5, step: 0.05, label: 'Mouse Parallax' },
+    parallaxIntensity: { value: 0.08, min: 0, max: 5, step: 0.05, label: 'Mouse Parallax' },
   })
 
   // Per-waypoint DoF & FOV toggle

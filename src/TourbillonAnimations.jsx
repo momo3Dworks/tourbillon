@@ -8,6 +8,7 @@ import gsap from 'gsap'
 import { useExploded } from './ExplodedContext'
 import { waypointCameraState } from './CameraRig'
 import { applyChunkExplosion } from './utils/ChunkExplode'
+import { applyMagicShockwave } from './utils/MagicShockwave'
 import { audioStore, useAudioStore } from './store/audioStore'
 import AlquimiaGlitchIllusion from './components/AlquimiaGlitchIllusion'
 
@@ -217,6 +218,10 @@ const TourbillonAnimations = () => {
   const domeRef = useRef(null)
   const explodedPiecesRef = useRef({})
 
+  // ── Explode / Collapse animation ─────────────────────────────────────────
+  // Shockwave hover uniforms
+  const shockwaveUniformsRef = useRef([])
+
   // ── Exploded-view interactive pieces — hover / spin / click ─────────────
   // East Explode Refs
   const alquimiaColliderRef = useRef(null)
@@ -405,18 +410,20 @@ const TourbillonAnimations = () => {
 
         if (!child.userData.basePosition) child.userData.basePosition = child.position.clone();
 
+        // Turn the collider into a visible, additive 'magic zone'
+        child.visible = true;
+        child.material = new THREE.MeshBasicMaterial({
+          color: 0x000000, // Black contributes nothing in AdditiveBlending
+          transparent: true,
+          opacity: 1,
+          blending: THREE.AdditiveBlending,
+          depthWrite: false
+        })
+        
         if (DEBUG_COLLIDERS) {
-          if (Array.isArray(child.material)) {
-            child.material.forEach(m => { m.transparent = true; m.opacity = 0.5; m.visible = true; m.color = new THREE.Color(0x00ff00); m.depthWrite = false; });
-          } else if (child.material) {
-            child.material = child.material.clone();
-            child.material.transparent = true;
-            child.material.opacity = 0.5;
-            child.visible = true;
-            child.material.visible = true;
-            if (child.material.color) child.material.color.setHex(0x00ff00);
-            child.material.depthWrite = false;
-          }
+          child.material.color.setHex(0x00ff00);
+          child.material.opacity = 0.5;
+          child.material.blending = THREE.NormalBlending;
         }
       }
 
@@ -503,6 +510,51 @@ const TourbillonAnimations = () => {
     reparent('AlquimiaFlask', 'AlquimiaSquare');
 
     reparent('AlquimiaWeight', 'AlquimiaFlaskGrabber');
+
+    // ── Apply Magic Shockwave to Tourbillons & Hotel Herrera Link ──
+    const applyToPin = (pinName, hoverRef) => {
+      const pinObj = gltf.scene.getObjectByName(pinName)
+      if (pinObj) {
+        pinObj.traverse(child => {
+          if (child.isMesh && child.material && child.name !== '__explodedCollider') {
+            const mats = Array.isArray(child.material) ? child.material : [child.material]
+            const newMats = mats.map(m => {
+              if (m.userData.hasShockwave) return m
+              const clone = m.clone()
+              const uniforms = applyMagicShockwave(clone)
+              clone.userData.hasShockwave = true
+              shockwaveUniformsRef.current.push({ uniforms, hoverRef })
+              return clone
+            })
+            child.material = Array.isArray(child.material) ? newMats : newMats[0]
+          }
+        })
+      }
+    }
+
+    applyToPin('PinEast', isHoveredEast)
+    applyToPin('PinNorth', isHoveredNorth)
+    applyToPin('PinSouth', isHoveredSouth)
+    applyToPin('PinWest', isHoveredWest)
+    applyToPin('HH_LOGO', isHoveredHotelHerreraLink)
+    
+    // Also apply directly to the invisible colliders themselves to act as glowing bounding zones
+    const applyToCollider = (colliderName, hoverRef) => {
+      const collider = gltf.scene.getObjectByName(colliderName)
+      if (collider && collider.isMesh && collider.material) {
+        if (collider.material.userData.hasShockwave) return
+        const clone = collider.material.clone()
+        const uniforms = applyMagicShockwave(clone)
+        clone.userData.hasShockwave = true
+        shockwaveUniformsRef.current.push({ uniforms, hoverRef })
+        collider.material = clone
+      }
+    }
+    
+    applyToCollider('TourbillonEast', isHoveredEast)
+    applyToCollider('TourbillonNorth', isHoveredNorth)
+    applyToCollider('TourbillonSouth', isHoveredSouth)
+    applyToCollider('TourbillonWest', isHoveredWest)
 
   }, [gltf])
 
@@ -1251,7 +1303,14 @@ const TourbillonAnimations = () => {
       }
     }
 
-
+    // ── Update active piece rotations + UI tracking + Shockwave ──────
+    shockwaveUniformsRef.current.forEach(({ uniforms, hoverRef }) => {
+      uniforms.uMSTime.value = state.clock.elapsedTime
+      
+      // Animate hover 0 to 1
+      const targetHover = hoverRef.current ? 1.0 : 0.0
+      uniforms.uMSHover.value = THREE.MathUtils.lerp(uniforms.uMSHover.value, targetHover, 1 - Math.pow(0.005, delta))
+    })
 
     if (!isExploded || isExploded === 'hotelherrera') {
       _raycaster.setFromCamera(state.mouse, state.camera)
