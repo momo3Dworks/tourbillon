@@ -410,20 +410,20 @@ const TourbillonAnimations = () => {
 
         if (!child.userData.basePosition) child.userData.basePosition = child.position.clone();
 
-        // Turn the collider into a visible, additive 'magic zone'
-        child.visible = true;
-        child.material = new THREE.MeshBasicMaterial({
-          color: 0x000000, // Black contributes nothing in AdditiveBlending
-          transparent: true,
-          opacity: 1,
-          blending: THREE.AdditiveBlending,
-          depthWrite: false
-        })
-        
         if (DEBUG_COLLIDERS) {
-          child.material.color.setHex(0x00ff00);
-          child.material.opacity = 0.5;
-          child.material.blending = THREE.NormalBlending;
+          if (Array.isArray(child.material)) {
+            child.material.forEach(m => { m.transparent = true; m.opacity = 0.5; m.visible = true; m.color = new THREE.Color(0x00ff00); m.depthWrite = false; });
+          } else if (child.material) {
+            child.material = child.material.clone();
+            child.material.transparent = true;
+            child.material.opacity = 0.5;
+            child.visible = true;
+            child.material.visible = true;
+            if (child.material.color) child.material.color.setHex(0x00ff00);
+            child.material.depthWrite = false;
+          }
+        } else {
+          child.visible = false;
         }
       }
 
@@ -537,24 +537,6 @@ const TourbillonAnimations = () => {
     applyToPin('PinSouth', isHoveredSouth)
     applyToPin('PinWest', isHoveredWest)
     applyToPin('HH_LOGO', isHoveredHotelHerreraLink)
-    
-    // Also apply directly to the invisible colliders themselves to act as glowing bounding zones
-    const applyToCollider = (colliderName, hoverRef) => {
-      const collider = gltf.scene.getObjectByName(colliderName)
-      if (collider && collider.isMesh && collider.material) {
-        if (collider.material.userData.hasShockwave) return
-        const clone = collider.material.clone()
-        const uniforms = applyMagicShockwave(clone)
-        clone.userData.hasShockwave = true
-        shockwaveUniformsRef.current.push({ uniforms, hoverRef })
-        collider.material = clone
-      }
-    }
-    
-    applyToCollider('TourbillonEast', isHoveredEast)
-    applyToCollider('TourbillonNorth', isHoveredNorth)
-    applyToCollider('TourbillonSouth', isHoveredSouth)
-    applyToCollider('TourbillonWest', isHoveredWest)
 
   }, [gltf])
 
