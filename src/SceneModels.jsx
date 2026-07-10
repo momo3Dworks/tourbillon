@@ -193,7 +193,9 @@ const SceneModels = ({
     const GEARS_FRAMES = {
       CenterPivotRotation: 1485,
       PinNorth: 720,
+      AlquimiaTourbillonDome: 600,
       TourbillonNorthInnerG4: 475,
+      TourbillonEastInnerG4: 600,
       TourbillonNorthInnerG3: 363,
       TourbillonNorthInnerG2: 363,
       TourbillonNorthInner: 363,
@@ -203,7 +205,7 @@ const SceneModels = ({
       PinEast: 720,
       PinEast_1: 720,
       InnerRingEast: 121,
-      InnerRingEast2: 360,
+      InnerRingEast2: 488,
       AlquimiaCircleOuter: 232,
       TourbillonSouthInnerG1: 475,
       TourbillonSouthInnerG2: 475,
@@ -216,7 +218,7 @@ const SceneModels = ({
       Element02: 579,
       Element01: 771,
       AlquimiaTriangle: 155,
-      AlquimiaCircleInner: 217,
+      AlquimiaCircleInner: 488,
       AlquimiaSquare: 59,
       PinWest: 720,
       G3_2: 350,
@@ -249,7 +251,6 @@ const SceneModels = ({
       AlquimiaGear4: 155,
       AlquimiaGear3: 155,
       AlquimiaGear2: 309,
-
     }
 
     // Expose all original actions to the global registry
@@ -440,6 +441,8 @@ const SceneModels = ({
               child.name === 'TourbillonNorthOutter' ||
               (child.material && (
                 child.material.name === 'TourbillonGlass' ||
+                child.material.name === 'GemGlass' ||
+                child.material.name === 'AlquimiaFlask' ||
                 child.material.transmission > 0 ||
                 (Array.isArray(child.material) && child.material.some(m => m.name === 'TourbillonGlass' || m.transmission > 0))
               ))
@@ -636,6 +639,62 @@ const SceneModels = ({
       })
     })
   }, [crystalMeshes, tunnelLights, doorsCamera, tunnelFloor, tourbillonDome, tourbillonSystem, vaultDoor, tunnelLightsConfig, emissiveIntensity])
+
+  // ── Alquimia Materials (GemGlass & AlquimiaFlask) ──────────────────────────
+  // transmission/ior/iridescence/dispersion are MeshPhysicalMaterial-only.
+  // We clone each material and upgrade it so the GLB's MeshStandardMaterial
+  // doesn't block those features.
+  useEffect(() => {
+    tourbillonSystem.scene.traverse((child) => {
+      if (!child.isMesh || !child.material) return
+
+      const replaceMat = (mat, index) => {
+        // Skip if already upgraded
+        if (mat.isPhysical || mat.userData.upgradedToPhysical) return mat
+
+        const isGem = mat.name === 'GemGlass'
+        const isFlask = mat.name === 'AlquimiaFlask'
+        if (!isGem && !isFlask) return mat
+
+        const phys = new THREE.MeshPhysicalMaterial({
+          // Copy base properties from original
+          color: mat.color.clone(),
+          roughness: mat.roughness,
+          metalness: mat.metalness,
+          map: mat.map,
+          normalMap: mat.normalMap,
+          normalScale: mat.normalScale?.clone(),
+          envMapIntensity: mat.envMapIntensity,
+          side: THREE.DoubleSide,
+          // Transmission
+          transmission: 1.0,
+          transparent: true,
+          opacity: 1.0,
+          ior: isGem ? 1.5 : 1.33,
+          thickness: 0.5,
+        })
+        phys.name = mat.name
+        phys.userData = { ...mat.userData, upgradedToPhysical: true }
+
+        if (isGem) {
+          phys.iridescence = 1.0
+          phys.iridescenceIOR = 1.3
+          phys.iridescenceThicknessRange = [100, 400]
+          phys.dispersion = 3.0
+        }
+
+        mat.dispose()
+        return phys
+      }
+
+      if (Array.isArray(child.material)) {
+        child.material = child.material.map((m, i) => replaceMat(m, i))
+      } else {
+        child.material = replaceMat(child.material, 0)
+      }
+    })
+  }, [tourbillonSystem])
+
 
   // Apply envMapIntensity to all materials in the scene
   useEffect(() => {

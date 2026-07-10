@@ -1,6 +1,6 @@
 import React, { useEffect, useRef, useCallback, useState } from 'react'
 import { useControls } from 'leva'
-import { useFrame, useThree, createPortal } from '@react-three/fiber'
+import { useFrame, useThree, createPortal, useLoader } from '@react-three/fiber'
 import { Html } from '@react-three/drei'
 import { useAdvancedGLTF, globalActions } from './SceneModels'
 import * as THREE from 'three'
@@ -9,6 +9,7 @@ import { useExploded } from './ExplodedContext'
 import { waypointCameraState } from './CameraRig'
 import { applyChunkExplosion } from './utils/ChunkExplode'
 import { audioStore, useAudioStore } from './store/audioStore'
+import AlquimiaGlitchIllusion from './components/AlquimiaGlitchIllusion'
 
 // Helper: get value based on isMobile flag
 const mob = (desktopVal, mobileVal) => audioStore.getState().isMobile ? mobileVal : desktopVal
@@ -177,6 +178,17 @@ const TourbillonAnimations = () => {
   const pinEastRef = useRef(null)
   const hotelHerreraLinkRef = useRef(null)
   const isHoveredHotelHerreraLink = useRef(false)
+
+  // Load SVG texture upfront to avoid Suspense render errors on dynamic mount
+  const alquimiaLogoMap = useLoader(THREE.TextureLoader, '/AlquimiaLogo_Appear.svg')
+
+  const alquimiaIllusionConfig = useControls('Alquimia SVG Illusion', {
+    pos: { value: [0.0, 0.0, 1], step: 0.1, label: 'Position' },
+    scale: { value: 1.0, min: 0.1, max: 10, step: 0.1, label: 'Scale' },
+    rot: { value: [0, 0, 0], step: 0.05, label: 'Rotation' }
+  })
+
+  // Leva controls for SVG Illusion
   const hhLogoRef = useRef(null)
   const hhCenterRef = useRef(null)
   const triggered = useRef(false)
@@ -373,7 +385,8 @@ const TourbillonAnimations = () => {
       if ([
         'PinEast', 'TourbillonEastInnerG4', 'AlquimiaCircleOuter', 'AlquimiaTriangle',
         'AlquimiaCircleInner', 'AlquimiaSquare', 'AlquimiaFlaskGrabber', 'AlquimiaWeight',
-        'Flask', 'AlquimiaFlask', 'AlquimiaGear7', 'AlquimiaGear1', 'AlquimiaInnerCircleGrabber'
+        'Flask', 'AlquimiaFlask', 'AlquimiaGear7', 'AlquimiaGear1', 'AlquimiaInnerCircleGrabber',
+        'AlquimiaTourbillonDome'
       ].includes(child.name)) {
         eastHierarchyMapRef.current[child.name] = child
       }
@@ -474,6 +487,7 @@ const TourbillonAnimations = () => {
 
     reparent('TourbillonEastInnerG4', 'PinEast');
     reparent('AlquimiaCircleOuter', 'TourbillonEastInnerG4');
+    reparent('AlquimiaTourbillonDome', 'TourbillonEastInnerG4');
 
     reparent('AlquimiaTriangle', 'AlquimiaCircleOuter');
 
@@ -609,7 +623,7 @@ const TourbillonAnimations = () => {
         } else {
           setNonExplodedMeshesVisible(false, ['HH_LOGO'], [])
         }
-        
+
         setTimeout(() => {
           buildCollider(hhLogoRef.current, hhLogoColliderRef, 0.85)
         }, 2200)
@@ -689,308 +703,308 @@ const TourbillonAnimations = () => {
 
       // ── De-parent active root pieces ─────────────────────────────────
       gsap.delayedCall(1.2, () => {
-      const activeAnimPieces =
-        isExploded === 'east' ? ANIMATED_EAST_PIECE_NAMES :
-          isExploded === 'south' ? ANIMATED_SOUTH_PIECE_NAMES :
-            isExploded === 'west' ? ANIMATED_WEST_PIECE_NAMES :
-              ANIMATED_NORTH_PIECE_NAMES
-      activeAnimPieces.forEach(name => {
-        const mesh = pieces[name]
-        if (mesh) {
-          if (!mesh.userData.originalParent) {
-            mesh.userData.originalParent = mesh.parent
-          }
-          scene.attach(mesh)
-        }
-      })
-
-      if (isExploded === 'east') {
-        const eastMeshNames = ['AlquimiaCircleOuter', 'AlquimiaTriangle', 'AlquimiaCircleInner', 'AlquimiaSquare']
-        eastMeshNames.forEach(name => {
-          globalActions[`GEARS__${name}`]?.stop?.()
-          globalActions[`TOPGEARS__${name}`]?.stop?.()
-        })
-
-        if (pieces['AlquimiaTourbillonDome']) {
-          gsap.to(pieces['AlquimiaTourbillonDome'].position, { x: mob(-2.2, 0), y: mob(5, 3), z: mob(5, 2), duration: 3.0, ease: 'power3.out' })
-          const targetRot = pieces['AlquimiaTourbillonDome'].userData.worldExplodedRot || pieces['AlquimiaTourbillonDome'].userData.defaultRot
-          gsap.to(pieces['AlquimiaTourbillonDome'].rotation, {
-            x: targetRot.x,
-            y: targetRot.y,
-            z: targetRot.z,
-            duration: 3.0, ease: 'power3.out',
-          })
-        }
-
-        if (pieces['InnerRingEast']) {
-          gsap.to(pieces['InnerRingEast'].position, { x: mob(1.2, 0.2), y: mob(4.8, 7), z: mob(7, 4), duration: 2.0, ease: 'power3.out' })
-          gsap.to(pieces['InnerRingEast'].rotation, {
-            x: pieces['InnerRingEast'].userData.defaultRot.x - 1,
-            y: pieces['InnerRingEast'].userData.defaultRot.y + 1,
-            z: pieces['InnerRingEast'].userData.defaultRot.z,
-            duration: 3.0, ease: 'power3.out',
-          })
-        }
-
-        if (pieces['AlquimiaCircleOuter']) {
-          gsap.killTweensOf(pieces['AlquimiaCircleOuter'].rotation)
-          gsap.to(pieces['AlquimiaCircleOuter'].rotation, {
-            x: pieces['AlquimiaCircleOuter'].userData.defaultRot.x,
-            y: pieces['AlquimiaCircleOuter'].userData.defaultRot.y + (Math.PI / -2),
-            z: pieces['AlquimiaCircleOuter'].userData.defaultRot.z,
-            duration: 3.0, ease: 'power3.out',
-          })
-        }
-
-        if (pieces['AlquimiaCircleOuter']) {
-          pieces['AlquimiaCircleOuter'].userData.worldExplodedY = mob(4.8, 5.2)
-          gsap.to(pieces['AlquimiaCircleOuter'].position, { x: mob(0, 0.25), y: pieces['AlquimiaCircleOuter'].userData.worldExplodedY, z: mob(7, 5), duration: 2.0, ease: 'power3.out' })
-        }
-      } else if (isExploded === 'north') {
-        // North exploded animations (WORLD SPACE)
-        ANIMATED_NORTH_PIECE_NAMES.forEach(name => {
+        const activeAnimPieces =
+          isExploded === 'east' ? ANIMATED_EAST_PIECE_NAMES :
+            isExploded === 'south' ? ANIMATED_SOUTH_PIECE_NAMES :
+              isExploded === 'west' ? ANIMATED_WEST_PIECE_NAMES :
+                ANIMATED_NORTH_PIECE_NAMES
+        activeAnimPieces.forEach(name => {
           const mesh = pieces[name]
           if (mesh) {
-            gsap.killTweensOf(mesh.position)
-            gsap.killTweensOf(mesh.rotation)
+            if (!mesh.userData.originalParent) {
+              mesh.userData.originalParent = mesh.parent
+            }
+            scene.attach(mesh)
           }
         })
 
-        if (pieces['TourbillonNorthOutter']) {
-          gsap.to(pieces['TourbillonNorthOutter'].position, { x: mob(0, 0), y: mob(4.8, 7.3), z: mob(7, 2), duration: 3.0, ease: 'power3.out' })
-          gsap.to(pieces['TourbillonNorthOutter'].rotation, {
-            x: pieces['TourbillonNorthOutter'].userData.defaultRot.x + 1,
-            y: pieces['TourbillonNorthOutter'].userData.defaultRot.y - 1,
-            z: pieces['TourbillonNorthOutter'].userData.defaultRot.z,
-            duration: 3.0, ease: 'power3.out',
-          })
-        }
-        if (pieces['TourbillonNorthInner']) {
-          gsap.to(pieces['TourbillonNorthInner'].position, { x: mob(3.4, 1), y: mob(4.8, 5.5), z: mob(4.8, 2), duration: 3.0, ease: 'power3.out' })
-          gsap.to(pieces['TourbillonNorthInner'].rotation, {
-            x: pieces['TourbillonNorthInner'].userData.defaultRot.x + 1,
-            y: pieces['TourbillonNorthInner'].userData.defaultRot.y,
-            z: pieces['TourbillonNorthInner'].userData.defaultRot.z,
-            duration: 13.0, ease: 'power3.out',
-          })
-        }
-        if (pieces['TourbillonNorthInnerG4']) {
-          gsap.to(pieces['TourbillonNorthInnerG4'].position, {
-            x: mob(-3.5, -0.2), y: mob(4.8, 4.7), z: mob(5.8, 6), duration: 2.8, ease: 'power3.out'
-          })
-          gsap.to(pieces['TourbillonNorthInnerG4'].rotation, {
-            x: pieces['TourbillonNorthInnerG4'].userData.defaultRot.x,
-            y: pieces['TourbillonNorthInnerG4'].userData.defaultRot.y,
-            z: pieces['TourbillonNorthInnerG4'].userData.defaultRot.z + 5,
-            duration: 2.8, ease: 'power3.out',
+        if (isExploded === 'east') {
+          const eastMeshNames = ['AlquimiaCircleOuter', 'AlquimiaTriangle', 'AlquimiaCircleInner', 'AlquimiaSquare']
+          eastMeshNames.forEach(name => {
+            globalActions[`GEARS__${name}`]?.stop?.()
+            globalActions[`TOPGEARS__${name}`]?.stop?.()
           })
 
-        }
-        if (pieces['TourbillonNorthInnerG2']) {
-          gsap.to(pieces['TourbillonNorthInnerG2'].position, { x: mob(-1.9, 0.4), y: mob(5.2, 4), z: mob(6.5, 6), duration: 3.0, ease: 'power3.out' })
-          gsap.to(pieces['TourbillonNorthInnerG2'].rotation, {
-            x: pieces['TourbillonNorthInnerG2'].userData.defaultRot.x,
-            y: pieces['TourbillonNorthInnerG2'].userData.defaultRot.y + 5,
-            z: pieces['TourbillonNorthInnerG2'].userData.defaultRot.z + 1,
-            duration: 3.0, ease: 'power3.out',
-          })
-        }
-
-
-        // Do NOT modify their rotation so they keep their original orientation from Blender
-
-        // ── Animate North Inner children with 1s delay after parent settles (3s + 1s = 4s) ──
-        const northChildren = [
-          { name: 'TourbillonNorthBolt1', delay: 2.0, yOffset: 0.4 },
-          { name: 'TourbillonNorthBolt2', delay: 2.2, yOffset: 0.8 },
-          { name: 'TourbillonNorthBolt3', delay: 2.4, yOffset: 1.0 },
-          { name: 'TourbillonNorthCenter', delay: 2.6, yOffset: 1.1 },
-        ];
-
-        northChildren.forEach(({ name, delay, yOffset }) => {
-          gsap.delayedCall(delay, () => {
-            const child = pieces[name]
-            if (!child) return
-            gsap.killTweensOf(child.position)
-            gsap.killTweensOf(child.rotation)
-            if (child.userData.orbitObj) gsap.killTweensOf(child.userData.orbitObj)
-
-            child.userData.orbitObj = { angle: 0 }
-
-            gsap.to(child.position, {
-              y: child.userData.defaultPos.y + yOffset,
-              duration: 1.5,
-              ease: 'power3.out',
-              onComplete: () => {
-                gsap.to(child.userData.orbitObj, {
-                  angle: Math.PI * 2,
-                  duration: 10,
-                  ease: "none",
-                  repeat: -1,
-                  onUpdate: () => {
-                    const a = child.userData.orbitObj.angle;
-                    child.position.x = child.userData.defaultPos.x * Math.cos(a) - child.userData.defaultPos.z * Math.sin(a);
-                    child.position.z = child.userData.defaultPos.x * Math.sin(a) + child.userData.defaultPos.z * Math.cos(a);
-                    child.rotation.y = child.userData.defaultRot.y + a;
-                  }
-                });
-              }
+          if (pieces['AlquimiaTourbillonDome']) {
+            gsap.to(pieces['AlquimiaTourbillonDome'].position, { x: mob(-2.2, 0), y: mob(5, 3), z: mob(5, 2), duration: 3.0, ease: 'power3.out' })
+            const targetRot = pieces['AlquimiaTourbillonDome'].userData.worldExplodedRot || pieces['AlquimiaTourbillonDome'].userData.defaultRot
+            gsap.to(pieces['AlquimiaTourbillonDome'].rotation, {
+              x: targetRot.x,
+              y: targetRot.y,
+              z: targetRot.z,
+              duration: 3.0, ease: 'power3.out',
             })
-          })
-        });
-      } else if (isExploded === 'south') {
-        // ── South exploded animations (WORLD SPACE) ────────────────────
-        ANIMATED_SOUTH_PIECE_NAMES.forEach(name => {
-          const mesh = pieces[name]
-          if (mesh) { gsap.killTweensOf(mesh.position); gsap.killTweensOf(mesh.rotation) }
-        })
+          }
 
-        if (pieces['TourbillonSouthOutter']) {
-          gsap.to(pieces['TourbillonSouthOutter'].position, { x: mob(0, 0), y: mob(4.8, 7), z: mob(6, 3), duration: 3.0, ease: 'power3.out' })
-          gsap.to(pieces['TourbillonSouthOutter'].rotation, {
-            x: pieces['TourbillonSouthOutter'].userData.defaultRot.x + 1,
-            y: pieces['TourbillonSouthOutter'].userData.defaultRot.y + 5,
-            z: pieces['TourbillonSouthOutter'].userData.defaultRot.z - 1,
-            duration: 3.0, ease: 'power3.out',
-          })
-        }
-        if (pieces['TourbillonSouthInner']) {
-          gsap.to(pieces['TourbillonSouthInner'].position, { x: mob(2.5, 0), y: mob(4.8, 5.9), z: mob(4.8, 1), duration: 3.0, ease: 'power3.out' })
-          gsap.to(pieces['TourbillonSouthInner'].rotation, {
-            x: pieces['TourbillonSouthInner'].userData.defaultRot.x + 1,
-            y: pieces['TourbillonSouthInner'].userData.defaultRot.y,
-            z: pieces['TourbillonSouthInner'].userData.defaultRot.z,
-            duration: 13.0, ease: 'power3.out',
-          })
-        }
-        if (pieces['TourbillonSouthInnerG4']) {
-          gsap.to(pieces['TourbillonSouthInnerG4'].position, { x: mob(-2.5, 0), y: mob(4.8, 4.65), z: mob(5.8, 6), duration: 2.8, ease: 'power3.out' })
-          gsap.to(pieces['TourbillonSouthInnerG4'].rotation, {
-            x: pieces['TourbillonSouthInnerG4'].userData.defaultRot.x,
-            y: pieces['TourbillonSouthInnerG4'].userData.defaultRot.y,
-            z: pieces['TourbillonSouthInnerG4'].userData.defaultRot.z + 5,
-            duration: 2.8, ease: 'power3.out',
-          })
-        }
-        if (pieces['TourbillonSouthInnerG2']) {
-          gsap.to(pieces['TourbillonSouthInnerG2'].position, { x: mob(-1.8, 0), y: mob(4.8, 3.5), z: mob(5.8, 6), duration: 3.0, ease: 'power3.out' })
-          gsap.to(pieces['TourbillonSouthInnerG2'].rotation, {
-            x: pieces['TourbillonSouthInnerG2'].userData.defaultRot.x,
-            y: pieces['TourbillonSouthInnerG2'].userData.defaultRot.y + 7,
-            z: pieces['TourbillonSouthInnerG2'].userData.defaultRot.z + 5,
-            duration: 3.0, ease: 'power3.out',
-          })
-        }
-        if (pieces['TourbillonSouthInnerG3']) {
-          gsap.to(pieces['TourbillonSouthInnerG3'].position, { x: mob(-2.8, 0), y: mob(5.4, 3.8), z: mob(5.8, 4), duration: 3.5, ease: 'power3.out' })
-          gsap.to(pieces['TourbillonSouthInnerG3'].rotation, {
-            x: pieces['TourbillonSouthInnerG3'].userData.defaultRot.x,
-            y: pieces['TourbillonSouthInnerG3'].userData.defaultRot.y - 12,
-            z: pieces['TourbillonSouthInnerG3'].userData.defaultRot.z + 3,
-            duration: 3.3, ease: 'power3.out',
-          })
-        }
-
-        // ── Animate South Inner children with staggered delay ─────────
-        const southChildren = [
-          { name: 'TourbillonSouthBolt1', delay: 2.0, yOffset: 0.4 },
-          { name: 'TourbillonSouthBolt2', delay: 2.2, yOffset: 0.8 },
-          { name: 'TourbillonSouthBolt3', delay: 2.4, yOffset: 1.0 },
-          { name: 'TourbillonSouthCenter', delay: 2.6, yOffset: 1.1 },
-        ];
-
-        southChildren.forEach(({ name, delay, yOffset }) => {
-          gsap.delayedCall(delay, () => {
-            const child = pieces[name]
-            if (!child) return
-            gsap.killTweensOf(child.position)
-            gsap.killTweensOf(child.rotation)
-            if (child.userData.orbitObj) gsap.killTweensOf(child.userData.orbitObj)
-
-            child.userData.orbitObj = { angle: 0 }
-
-            gsap.to(child.position, {
-              y: child.userData.defaultPos.y + yOffset,
-              duration: 1.5,
-              ease: 'power3.out',
-              onComplete: () => {
-                gsap.to(child.userData.orbitObj, {
-                  angle: Math.PI * 2,
-                  duration: 10,
-                  ease: "none",
-                  repeat: -1,
-                  onUpdate: () => {
-                    const a = child.userData.orbitObj.angle;
-                    child.position.x = child.userData.defaultPos.x * Math.cos(a) - child.userData.defaultPos.z * Math.sin(a);
-                    child.position.z = child.userData.defaultPos.x * Math.sin(a) + child.userData.defaultPos.z * Math.cos(a);
-                    child.rotation.y = child.userData.defaultRot.y + a;
-                  }
-                });
-              }
+          if (pieces['InnerRingEast']) {
+            gsap.to(pieces['InnerRingEast'].position, { x: mob(1.5, 0.2), y: mob(4.8, 7), z: mob(7, 4), duration: 2.0, ease: 'power3.out' })
+            gsap.to(pieces['InnerRingEast'].rotation, {
+              x: pieces['InnerRingEast'].userData.defaultRot.x - 1,
+              y: pieces['InnerRingEast'].userData.defaultRot.y + 1,
+              z: pieces['InnerRingEast'].userData.defaultRot.z,
+              duration: 3.0, ease: 'power3.out',
             })
-          })
-        });
-      } else if (isExploded === 'west') {
-        // ── West exploded animations (WORLD SPACE) ────────────────────
-        ANIMATED_WEST_PIECE_NAMES.forEach(name => {
-          const mesh = pieces[name]
-          if (mesh) { gsap.killTweensOf(mesh.position); gsap.killTweensOf(mesh.rotation) }
-        })
+          }
 
-        // Fully stop the per-object animation actions so the mixer releases rotation control.
-        // timeScale=0 is not enough — the mixer still writes the paused frame every tick.
-        const westMeshNames = ['TourbillonWestWeigth', 'Gear_1', 'G3', 'G3_2', 'G5', 'G5_2', 'G1', 'G1_1', 'G1_2']
-        westMeshNames.forEach(name => {
-          globalActions[`GEARS__${name}`]?.stop?.()
-          globalActions[`TOPGEARS__${name}`]?.stop?.()
-        })
+          if (pieces['AlquimiaCircleOuter']) {
+            gsap.killTweensOf(pieces['AlquimiaCircleOuter'].rotation)
+            gsap.to(pieces['AlquimiaCircleOuter'].rotation, {
+              x: pieces['AlquimiaCircleOuter'].userData.defaultRot.x,
+              y: pieces['AlquimiaCircleOuter'].userData.defaultRot.y + (Math.PI / -2),
+              z: pieces['AlquimiaCircleOuter'].userData.defaultRot.z,
+              duration: 3.0, ease: 'power3.out',
+            })
+          }
 
-        if (pieces['TourbillonWestWeigth']) {
-          gsap.to(pieces['TourbillonWestWeigth'].position, { x: mob(-0.5, 0), y: mob(4.8, 7.5), z: mob(5, 2), duration: 3.0, ease: 'power3.out' })
-          gsap.to(pieces['TourbillonWestWeigth'].rotation, {
-            x: pieces['TourbillonWestWeigth'].userData.defaultRot.x + 1,
-            y: pieces['TourbillonWestWeigth'].userData.defaultRot.y + 1,
-            z: pieces['TourbillonWestWeigth'].userData.defaultRot.z,
-            duration: 3.0, ease: 'power3.out',
+          if (pieces['AlquimiaCircleOuter']) {
+            pieces['AlquimiaCircleOuter'].userData.worldExplodedY = mob(5, 5.2)
+            gsap.to(pieces['AlquimiaCircleOuter'].position, { x: mob(0, 0.25), y: pieces['AlquimiaCircleOuter'].userData.worldExplodedY, z: mob(7.3, 5), duration: 2.0, ease: 'power3.out' })
+          }
+        } else if (isExploded === 'north') {
+          // North exploded animations (WORLD SPACE)
+          ANIMATED_NORTH_PIECE_NAMES.forEach(name => {
+            const mesh = pieces[name]
+            if (mesh) {
+              gsap.killTweensOf(mesh.position)
+              gsap.killTweensOf(mesh.rotation)
+            }
           })
-        }
-        if (pieces['Gear_1']) {
-          gsap.to(pieces['Gear_1'].position, { x: mob(3, 0), y: mob(4.8, 2.8), z: mob(4.8, 3), duration: 3.0, ease: 'power3.out' })
-          gsap.to(pieces['Gear_1'].rotation, {
-            x: pieces['Gear_1'].userData.defaultRot.x,
-            y: pieces['Gear_1'].userData.defaultRot.y + 1.5,
-            z: pieces['Gear_1'].userData.defaultRot.z + 1,
-            duration: 13.0, ease: 'power3.out',
+
+          if (pieces['TourbillonNorthOutter']) {
+            gsap.to(pieces['TourbillonNorthOutter'].position, { x: mob(0, 0), y: mob(4.8, 7.3), z: mob(7, 2), duration: 3.0, ease: 'power3.out' })
+            gsap.to(pieces['TourbillonNorthOutter'].rotation, {
+              x: pieces['TourbillonNorthOutter'].userData.defaultRot.x + 1,
+              y: pieces['TourbillonNorthOutter'].userData.defaultRot.y - 1,
+              z: pieces['TourbillonNorthOutter'].userData.defaultRot.z,
+              duration: 3.0, ease: 'power3.out',
+            })
+          }
+          if (pieces['TourbillonNorthInner']) {
+            gsap.to(pieces['TourbillonNorthInner'].position, { x: mob(3.4, 1), y: mob(4.8, 5.5), z: mob(4.8, 2), duration: 3.0, ease: 'power3.out' })
+            gsap.to(pieces['TourbillonNorthInner'].rotation, {
+              x: pieces['TourbillonNorthInner'].userData.defaultRot.x + 1,
+              y: pieces['TourbillonNorthInner'].userData.defaultRot.y,
+              z: pieces['TourbillonNorthInner'].userData.defaultRot.z,
+              duration: 13.0, ease: 'power3.out',
+            })
+          }
+          if (pieces['TourbillonNorthInnerG4']) {
+            gsap.to(pieces['TourbillonNorthInnerG4'].position, {
+              x: mob(-3.5, -0.2), y: mob(4.8, 4.7), z: mob(5.8, 6), duration: 2.8, ease: 'power3.out'
+            })
+            gsap.to(pieces['TourbillonNorthInnerG4'].rotation, {
+              x: pieces['TourbillonNorthInnerG4'].userData.defaultRot.x,
+              y: pieces['TourbillonNorthInnerG4'].userData.defaultRot.y,
+              z: pieces['TourbillonNorthInnerG4'].userData.defaultRot.z + 5,
+              duration: 2.8, ease: 'power3.out',
+            })
+
+          }
+          if (pieces['TourbillonNorthInnerG2']) {
+            gsap.to(pieces['TourbillonNorthInnerG2'].position, { x: mob(-1.9, 0.4), y: mob(5.2, 4), z: mob(6.5, 6), duration: 3.0, ease: 'power3.out' })
+            gsap.to(pieces['TourbillonNorthInnerG2'].rotation, {
+              x: pieces['TourbillonNorthInnerG2'].userData.defaultRot.x,
+              y: pieces['TourbillonNorthInnerG2'].userData.defaultRot.y + 5,
+              z: pieces['TourbillonNorthInnerG2'].userData.defaultRot.z + 1,
+              duration: 3.0, ease: 'power3.out',
+            })
+          }
+
+
+          // Do NOT modify their rotation so they keep their original orientation from Blender
+
+          // ── Animate North Inner children with 1s delay after parent settles (3s + 1s = 4s) ──
+          const northChildren = [
+            { name: 'TourbillonNorthBolt1', delay: 2.0, yOffset: 0.4 },
+            { name: 'TourbillonNorthBolt2', delay: 2.2, yOffset: 0.8 },
+            { name: 'TourbillonNorthBolt3', delay: 2.4, yOffset: 1.0 },
+            { name: 'TourbillonNorthCenter', delay: 2.6, yOffset: 1.1 },
+          ];
+
+          northChildren.forEach(({ name, delay, yOffset }) => {
+            gsap.delayedCall(delay, () => {
+              const child = pieces[name]
+              if (!child) return
+              gsap.killTweensOf(child.position)
+              gsap.killTweensOf(child.rotation)
+              if (child.userData.orbitObj) gsap.killTweensOf(child.userData.orbitObj)
+
+              child.userData.orbitObj = { angle: 0 }
+
+              gsap.to(child.position, {
+                y: child.userData.defaultPos.y + yOffset,
+                duration: 1.5,
+                ease: 'power3.out',
+                onComplete: () => {
+                  gsap.to(child.userData.orbitObj, {
+                    angle: Math.PI * 2,
+                    duration: 10,
+                    ease: "none",
+                    repeat: -1,
+                    onUpdate: () => {
+                      const a = child.userData.orbitObj.angle;
+                      child.position.x = child.userData.defaultPos.x * Math.cos(a) - child.userData.defaultPos.z * Math.sin(a);
+                      child.position.z = child.userData.defaultPos.x * Math.sin(a) + child.userData.defaultPos.z * Math.cos(a);
+                      child.rotation.y = child.userData.defaultRot.y + a;
+                    }
+                  });
+                }
+              })
+            })
+          });
+        } else if (isExploded === 'south') {
+          // ── South exploded animations (WORLD SPACE) ────────────────────
+          ANIMATED_SOUTH_PIECE_NAMES.forEach(name => {
+            const mesh = pieces[name]
+            if (mesh) { gsap.killTweensOf(mesh.position); gsap.killTweensOf(mesh.rotation) }
           })
-        }
-        if (pieces['G3']) {
-          gsap.to(pieces['G3'].position, { x: mob(-2, 0), y: mob(4.8, 6.2), z: mob(5.8, 3), duration: 2.8, ease: 'power3.out' })
-          gsap.to(pieces['G3'].rotation, {
-            x: pieces['G3'].userData.defaultRot.x + 5,
-            y: pieces['G3'].userData.defaultRot.y + 1,
-            z: pieces['G3'].userData.defaultRot.z + 5,
-            duration: 2.8, ease: 'power3.out',
+
+          if (pieces['TourbillonSouthOutter']) {
+            gsap.to(pieces['TourbillonSouthOutter'].position, { x: mob(0, 0), y: mob(4.8, 7), z: mob(6, 3), duration: 3.0, ease: 'power3.out' })
+            gsap.to(pieces['TourbillonSouthOutter'].rotation, {
+              x: pieces['TourbillonSouthOutter'].userData.defaultRot.x + 1,
+              y: pieces['TourbillonSouthOutter'].userData.defaultRot.y + 5,
+              z: pieces['TourbillonSouthOutter'].userData.defaultRot.z - 1,
+              duration: 3.0, ease: 'power3.out',
+            })
+          }
+          if (pieces['TourbillonSouthInner']) {
+            gsap.to(pieces['TourbillonSouthInner'].position, { x: mob(2.5, 0), y: mob(4.8, 5.9), z: mob(4.8, 1), duration: 3.0, ease: 'power3.out' })
+            gsap.to(pieces['TourbillonSouthInner'].rotation, {
+              x: pieces['TourbillonSouthInner'].userData.defaultRot.x + 1,
+              y: pieces['TourbillonSouthInner'].userData.defaultRot.y,
+              z: pieces['TourbillonSouthInner'].userData.defaultRot.z,
+              duration: 13.0, ease: 'power3.out',
+            })
+          }
+          if (pieces['TourbillonSouthInnerG4']) {
+            gsap.to(pieces['TourbillonSouthInnerG4'].position, { x: mob(-2.5, 0), y: mob(4.8, 4.65), z: mob(5.8, 6), duration: 2.8, ease: 'power3.out' })
+            gsap.to(pieces['TourbillonSouthInnerG4'].rotation, {
+              x: pieces['TourbillonSouthInnerG4'].userData.defaultRot.x,
+              y: pieces['TourbillonSouthInnerG4'].userData.defaultRot.y,
+              z: pieces['TourbillonSouthInnerG4'].userData.defaultRot.z + 5,
+              duration: 2.8, ease: 'power3.out',
+            })
+          }
+          if (pieces['TourbillonSouthInnerG2']) {
+            gsap.to(pieces['TourbillonSouthInnerG2'].position, { x: mob(-1.8, 0), y: mob(4.8, 3.5), z: mob(5.8, 6), duration: 3.0, ease: 'power3.out' })
+            gsap.to(pieces['TourbillonSouthInnerG2'].rotation, {
+              x: pieces['TourbillonSouthInnerG2'].userData.defaultRot.x,
+              y: pieces['TourbillonSouthInnerG2'].userData.defaultRot.y + 7,
+              z: pieces['TourbillonSouthInnerG2'].userData.defaultRot.z + 5,
+              duration: 3.0, ease: 'power3.out',
+            })
+          }
+          if (pieces['TourbillonSouthInnerG3']) {
+            gsap.to(pieces['TourbillonSouthInnerG3'].position, { x: mob(-2.8, 0), y: mob(5.4, 3.8), z: mob(5.8, 4), duration: 3.5, ease: 'power3.out' })
+            gsap.to(pieces['TourbillonSouthInnerG3'].rotation, {
+              x: pieces['TourbillonSouthInnerG3'].userData.defaultRot.x,
+              y: pieces['TourbillonSouthInnerG3'].userData.defaultRot.y - 12,
+              z: pieces['TourbillonSouthInnerG3'].userData.defaultRot.z + 3,
+              duration: 3.3, ease: 'power3.out',
+            })
+          }
+
+          // ── Animate South Inner children with staggered delay ─────────
+          const southChildren = [
+            { name: 'TourbillonSouthBolt1', delay: 2.0, yOffset: 0.4 },
+            { name: 'TourbillonSouthBolt2', delay: 2.2, yOffset: 0.8 },
+            { name: 'TourbillonSouthBolt3', delay: 2.4, yOffset: 1.0 },
+            { name: 'TourbillonSouthCenter', delay: 2.6, yOffset: 1.1 },
+          ];
+
+          southChildren.forEach(({ name, delay, yOffset }) => {
+            gsap.delayedCall(delay, () => {
+              const child = pieces[name]
+              if (!child) return
+              gsap.killTweensOf(child.position)
+              gsap.killTweensOf(child.rotation)
+              if (child.userData.orbitObj) gsap.killTweensOf(child.userData.orbitObj)
+
+              child.userData.orbitObj = { angle: 0 }
+
+              gsap.to(child.position, {
+                y: child.userData.defaultPos.y + yOffset,
+                duration: 1.5,
+                ease: 'power3.out',
+                onComplete: () => {
+                  gsap.to(child.userData.orbitObj, {
+                    angle: Math.PI * 2,
+                    duration: 10,
+                    ease: "none",
+                    repeat: -1,
+                    onUpdate: () => {
+                      const a = child.userData.orbitObj.angle;
+                      child.position.x = child.userData.defaultPos.x * Math.cos(a) - child.userData.defaultPos.z * Math.sin(a);
+                      child.position.z = child.userData.defaultPos.x * Math.sin(a) + child.userData.defaultPos.z * Math.cos(a);
+                      child.rotation.y = child.userData.defaultRot.y + a;
+                    }
+                  });
+                }
+              })
+            })
+          });
+        } else if (isExploded === 'west') {
+          // ── West exploded animations (WORLD SPACE) ────────────────────
+          ANIMATED_WEST_PIECE_NAMES.forEach(name => {
+            const mesh = pieces[name]
+            if (mesh) { gsap.killTweensOf(mesh.position); gsap.killTweensOf(mesh.rotation) }
           })
-        }
-        if (pieces['G5']) {
-          gsap.to(pieces['G5'].position, { x: mob(0.7, -0.1), y: mob(4.8, 4.5), z: mob(6, 6), duration: 3.0, ease: 'power3.out' })
-          gsap.to(pieces['G5'].rotation, {
-            x: pieces['G5'].userData.defaultRot.x + 1,
-            y: pieces['G5'].userData.defaultRot.y,
-            z: pieces['G5'].userData.defaultRot.z,
-            duration: 3.0, ease: 'power3.out',
+
+          // Fully stop the per-object animation actions so the mixer releases rotation control.
+          // timeScale=0 is not enough — the mixer still writes the paused frame every tick.
+          const westMeshNames = ['TourbillonWestWeigth', 'Gear_1', 'G3', 'G3_2', 'G5', 'G5_2', 'G1', 'G1_1', 'G1_2']
+          westMeshNames.forEach(name => {
+            globalActions[`GEARS__${name}`]?.stop?.()
+            globalActions[`TOPGEARS__${name}`]?.stop?.()
           })
+
+          if (pieces['TourbillonWestWeigth']) {
+            gsap.to(pieces['TourbillonWestWeigth'].position, { x: mob(-0.5, 0), y: mob(4.8, 7.5), z: mob(5, 2), duration: 3.0, ease: 'power3.out' })
+            gsap.to(pieces['TourbillonWestWeigth'].rotation, {
+              x: pieces['TourbillonWestWeigth'].userData.defaultRot.x + 1,
+              y: pieces['TourbillonWestWeigth'].userData.defaultRot.y + 1,
+              z: pieces['TourbillonWestWeigth'].userData.defaultRot.z,
+              duration: 3.0, ease: 'power3.out',
+            })
+          }
+          if (pieces['Gear_1']) {
+            gsap.to(pieces['Gear_1'].position, { x: mob(3, 0), y: mob(4.8, 2.8), z: mob(4.8, 3), duration: 3.0, ease: 'power3.out' })
+            gsap.to(pieces['Gear_1'].rotation, {
+              x: pieces['Gear_1'].userData.defaultRot.x,
+              y: pieces['Gear_1'].userData.defaultRot.y + 1.5,
+              z: pieces['Gear_1'].userData.defaultRot.z + 1,
+              duration: 13.0, ease: 'power3.out',
+            })
+          }
+          if (pieces['G3']) {
+            gsap.to(pieces['G3'].position, { x: mob(-2, 0), y: mob(4.8, 6.2), z: mob(5.8, 3), duration: 2.8, ease: 'power3.out' })
+            gsap.to(pieces['G3'].rotation, {
+              x: pieces['G3'].userData.defaultRot.x + 5,
+              y: pieces['G3'].userData.defaultRot.y + 1,
+              z: pieces['G3'].userData.defaultRot.z + 5,
+              duration: 2.8, ease: 'power3.out',
+            })
+          }
+          if (pieces['G5']) {
+            gsap.to(pieces['G5'].position, { x: mob(0.7, -0.1), y: mob(4.8, 4.5), z: mob(6, 6), duration: 3.0, ease: 'power3.out' })
+            gsap.to(pieces['G5'].rotation, {
+              x: pieces['G5'].userData.defaultRot.x + 1,
+              y: pieces['G5'].userData.defaultRot.y,
+              z: pieces['G5'].userData.defaultRot.z,
+              duration: 3.0, ease: 'power3.out',
+            })
+          }
+          if (pieces['G1']) {
+            gsap.to(pieces['G1'].position, { x: mob(-3, 0), y: mob(5, 5.2), z: mob(5.8, 2), duration: 3.5, ease: 'power3.out' })
+            gsap.to(pieces['G1'].rotation, {
+              x: pieces['G1'].userData.defaultRot.x,
+              y: pieces['G1'].userData.defaultRot.y + 2,
+              z: pieces['G1'].userData.defaultRot.z + 1,
+              duration: 3.3, ease: 'power3.out',
+            })
+          }
         }
-        if (pieces['G1']) {
-          gsap.to(pieces['G1'].position, { x: mob(-3, 0), y: mob(5, 5.2), z: mob(5.8, 2), duration: 3.5, ease: 'power3.out' })
-          gsap.to(pieces['G1'].rotation, {
-            x: pieces['G1'].userData.defaultRot.x,
-            y: pieces['G1'].userData.defaultRot.y + 2,
-            z: pieces['G1'].userData.defaultRot.z + 1,
-            duration: 3.3, ease: 'power3.out',
-          })
-        }
-      }
       }) // End delayedCall
 
       // buildCollider was moved to the top of this useEffect
@@ -1936,6 +1950,18 @@ const TourbillonAnimations = () => {
           </React.Fragment>
         )
       })}
+
+      {/* Render the Alquimia glitch SVG illusion attached to AlquimiaCircleOuter */}
+      {isExploded === 'east' && explodedPiecesRef.current['AlquimiaCircleOuter'] && createPortal(
+        <AlquimiaGlitchIllusion
+          map={alquimiaLogoMap}
+          hovered={isHoveredAlquimia.current}
+          pos={alquimiaIllusionConfig.pos}
+          scale={alquimiaIllusionConfig.scale}
+          rot={alquimiaIllusionConfig.rot}
+        />,
+        explodedPiecesRef.current['AlquimiaCircleOuter']
+      )}
     </>
   )
 }

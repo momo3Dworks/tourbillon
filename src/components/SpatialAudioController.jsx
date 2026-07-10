@@ -275,22 +275,24 @@ const SpatialAudioController = () => {
     const clickFactor = THREE.MathUtils.clamp(2.0 - distSystem / 100.0, 0, 1)
     const targetVolumeClick = volumeTourbillonClick * clickFactor * (isPlayingAll ? 1 : 0)
 
-    if (clickPlayerReadyRef.current && clickPlayerRef.current) {
-      if (typeof clickPlayerRef.current.setVolume === 'function') {
-        clickPlayerRef.current.setVolume(targetVolumeClick * 100)
-      }
-      if (typeof clickPlayerRef.current.getPlayerState === 'function') {
-        const stateVal = clickPlayerRef.current.getPlayerState()
-        if (!isPlayingAll || distSystem >= maxClickDist) {
-          if (stateVal === 1 && typeof clickPlayerRef.current.pauseVideo === 'function') {
-            clickPlayerRef.current.pauseVideo()
-          }
-        } else if (isPlayingAll && hasTriggeredClickAudios.current) {
-          if (stateVal !== 1 && typeof clickPlayerRef.current.playVideo === 'function') {
-            clickPlayerRef.current.playVideo()
+    if (clickPlayerReadyRef.current && clickPlayerRef.current && clickPlayerRef.current.getIframe()) {
+      try {
+        if (typeof clickPlayerRef.current.setVolume === 'function') {
+          clickPlayerRef.current.setVolume(targetVolumeClick * 100)
+        }
+        if (typeof clickPlayerRef.current.getPlayerState === 'function') {
+          const stateVal = clickPlayerRef.current.getPlayerState()
+          if (!isPlayingAll || distSystem >= maxClickDist) {
+            if (stateVal === 1 && typeof clickPlayerRef.current.pauseVideo === 'function') {
+              clickPlayerRef.current.pauseVideo()
+            }
+          } else if (isPlayingAll && hasTriggeredClickAudios.current) {
+            if (stateVal !== 1 && typeof clickPlayerRef.current.playVideo === 'function') {
+              clickPlayerRef.current.playVideo()
+            }
           }
         }
-      }
+      } catch(e) {}
     }
 
     // C. Second YouTube Video (lNYCujza8JU) - strictly proximity-based playback
@@ -298,43 +300,47 @@ const SpatialAudioController = () => {
     const proximityThreshold = 200.0
     const targetVolumeProximity = 0.5 * volumeTourbillonProximity * THREE.MathUtils.clamp(2.0 - distSystem / 100.0, 0, 1)
 
-    if (proximityPlayerReadyRef.current && proximityPlayerRef.current) {
-      if (typeof proximityPlayerRef.current.setVolume === 'function') {
-        proximityPlayerRef.current.setVolume(targetVolumeProximity * 100)
-      }
-      if (typeof proximityPlayerRef.current.getPlayerState === 'function') {
-        const stateVal = proximityPlayerRef.current.getPlayerState()
-        if (isPlayingAll && distSystem < proximityThreshold) {
-          if (stateVal !== 1 && typeof proximityPlayerRef.current.playVideo === 'function') {
-            proximityPlayerRef.current.playVideo()
-          }
-        } else {
-          if (stateVal === 1 && typeof proximityPlayerRef.current.pauseVideo === 'function') {
-            proximityPlayerRef.current.pauseVideo()
+    if (proximityPlayerReadyRef.current && proximityPlayerRef.current && proximityPlayerRef.current.getIframe()) {
+      try {
+        if (typeof proximityPlayerRef.current.setVolume === 'function') {
+          proximityPlayerRef.current.setVolume(targetVolumeProximity * 100)
+        }
+        if (typeof proximityPlayerRef.current.getPlayerState === 'function') {
+          const stateVal = proximityPlayerRef.current.getPlayerState()
+          if (!isPlayingAll || distSystem >= proximityThreshold) {
+            if (stateVal === 1 && typeof proximityPlayerRef.current.pauseVideo === 'function') {
+              proximityPlayerRef.current.pauseVideo()
+            }
+          } else if (isPlayingAll) {
+            if (stateVal !== 1 && typeof proximityPlayerRef.current.playVideo === 'function') {
+              proximityPlayerRef.current.playVideo()
+            }
           }
         }
-      }
+      } catch(e) {}
     }
 
     // D. Third YouTube Video (9fsHGj9ZJFo) - strictly proximity-based playback
     const targetVolumeProximity2 = 1.0 * volumeTourbillonProximity2 * THREE.MathUtils.clamp(2.0 - distSystem / 100.0, 0, 1)
 
-    if (proximityPlayer2ReadyRef.current && proximityPlayer2Ref.current) {
-      if (typeof proximityPlayer2Ref.current.setVolume === 'function') {
-        proximityPlayer2Ref.current.setVolume(targetVolumeProximity2 * 100)
-      }
-      if (typeof proximityPlayer2Ref.current.getPlayerState === 'function') {
-        const stateVal = proximityPlayer2Ref.current.getPlayerState()
-        if (isPlayingAll && distSystem < proximityThreshold) {
-          if (stateVal !== 1 && typeof proximityPlayer2Ref.current.playVideo === 'function') {
-            proximityPlayer2Ref.current.playVideo()
-          }
-        } else {
-          if (stateVal === 1 && typeof proximityPlayer2Ref.current.pauseVideo === 'function') {
-            proximityPlayer2Ref.current.pauseVideo()
+    if (proximityPlayer2ReadyRef.current && proximityPlayer2Ref.current && proximityPlayer2Ref.current.getIframe()) {
+      try {
+        if (typeof proximityPlayer2Ref.current.setVolume === 'function') {
+          proximityPlayer2Ref.current.setVolume(targetVolumeProximity2 * 100)
+        }
+        if (typeof proximityPlayer2Ref.current.getPlayerState === 'function') {
+          const stateVal = proximityPlayer2Ref.current.getPlayerState()
+          if (!isPlayingAll || distSystem >= proximityThreshold) {
+            if (stateVal === 1 && typeof proximityPlayer2Ref.current.pauseVideo === 'function') {
+              proximityPlayer2Ref.current.pauseVideo()
+            }
+          } else if (isPlayingAll) {
+            if (stateVal !== 1 && typeof proximityPlayer2Ref.current.playVideo === 'function') {
+              proximityPlayer2Ref.current.playVideo()
+            }
           }
         }
-      }
+      } catch(e) {}
     }
 
     // E. GearsSounds.mp3 - Random playback when close to system
