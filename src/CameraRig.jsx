@@ -46,7 +46,7 @@ export const DESKTOP_WAYPOINTS = [
     dof: { focusDistance: 0.5, focalLength: 10, bokehScale: 10 },
   },
   {
-    position: [0, 70, 1],
+    position: [0, 75, 1],
     target: [0, 0, 0],
     fov: 60,
     dof: { focusDistance: 6, focalLength: 23, bokehScale: 8 },
@@ -128,6 +128,7 @@ const _target = new THREE.Vector3()
 
 import { useExploded } from './ExplodedContext'
 import { useControls } from 'leva'
+import { doorGates, DOOR_CONFIG } from './DoorAnimations'
 
 // ────────────────────────────────────────────────────────────────────────────────
 // NORTH EXPLODED VIEW — Per-section camera waypoints
@@ -400,6 +401,28 @@ const CameraRig = () => {
         -1.0,
         maxIdx
       )
+
+      // ── Door gate: hold camera at holdY while door animation plays ───────
+      // Convert each active gate's world-Y into a progress upper bound and
+      // clamp progress so the camera cannot advance past it.
+      if (Object.keys(doorGates).length > 0) {
+        const camPos = new THREE.Vector3()
+        camera.getWorldPosition(camPos)
+        for (const door of DOOR_CONFIG) {
+          const gate = doorGates[door.label]
+          if (gate && gate.active) {
+            const holdY = gate.maxProgressY
+            // Only clamp downward movement (positive velocity = going down)
+            if (velocity.current > 0 && camPos.y <= holdY + 0.5) {
+              velocity.current = 0
+              // Clamp camera Y directly by not allowing it below holdY
+              if (camera.position.y < holdY) {
+                camera.position.y = holdY
+              }
+            }
+          }
+        }
+      }
     }
 
     // Sync global scroll progress
