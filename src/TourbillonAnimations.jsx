@@ -197,6 +197,27 @@ const TourbillonAnimations = () => {
   const [piecesReady, setPiecesReady] = useState(false)
   const { isMobile } = useAudioStore()
 
+  // Exploded View Sounds
+  const audioNorthRef = useRef(null)
+  const audioEastRef = useRef(null)
+  const audioSouthRef = useRef(null)
+  const audioWestRef = useRef(null)
+
+  useEffect(() => {
+    audioNorthRef.current = new Audio('/TourbillonNorthOpened.mp3')
+    audioEastRef.current = new Audio('/TourbillonEastOpened.mp3')
+    audioSouthRef.current = new Audio('/TourbillonSouthOpened.mp3')
+    audioWestRef.current = new Audio('/TourbillonWestOpened.mp3')
+
+    return audioStore.subscribe(() => {
+      const state = audioStore.getState()
+      if (audioNorthRef.current) audioNorthRef.current.volume = state.volumeTourbillonNorthOpened ?? 1.0
+      if (audioEastRef.current) audioEastRef.current.volume = state.volumeTourbillonEastOpened ?? 1.0
+      if (audioSouthRef.current) audioSouthRef.current.volume = state.volumeTourbillonSouthOpened ?? 1.0
+      if (audioWestRef.current) audioWestRef.current.volume = state.volumeTourbillonWestOpened ?? 1.0
+    })
+  }, [])
+
   // Refs for hover / collider on TourbillonEast (no electric shader)
   const eastColliderRef = useRef(null)
   const eastOriginalMat = useRef(null)
@@ -217,6 +238,7 @@ const TourbillonAnimations = () => {
   // Refs for exploded pieces
   const domeRef = useRef(null)
   const explodedPiecesRef = useRef({})
+  const prevExplodedRef = useRef(null)
 
   // ── Explode / Collapse animation ─────────────────────────────────────────
   // Shockwave hover uniforms
@@ -663,6 +685,8 @@ const TourbillonAnimations = () => {
         }, 2200)
       }
     } else if (isExploded) { // 'east', 'north', or 'south'
+      prevExplodedRef.current = isExploded
+
       // Clean up hover state
       isHoveredEast.current = false
       isHoveredNorth.current = false
@@ -1071,6 +1095,23 @@ const TourbillonAnimations = () => {
 
     } else if (!isExploded) {
       // ── Collapse ────────────────────────────────────────────────────────────
+      if (prevExplodedRef.current && prevExplodedRef.current !== 'hotelherrera') {
+        const directions = ['north', 'east', 'south', 'west'].filter(d => d !== prevExplodedRef.current)
+        const randomDir = directions[Math.floor(Math.random() * directions.length)]
+        const audioMap = {
+          'north': audioNorthRef.current,
+          'east': audioEastRef.current,
+          'south': audioSouthRef.current,
+          'west': audioWestRef.current
+        }
+        const audioToPlay = audioMap[randomDir]
+        if (audioToPlay) {
+          audioToPlay.currentTime = 0
+          audioToPlay.play().catch(e => console.warn(e))
+        }
+      }
+      prevExplodedRef.current = null
+
       waypointCameraState.hoveredObject = null
       // Reset section camera waypoint
       setActiveSection(null)
@@ -1842,15 +1883,31 @@ const TourbillonAnimations = () => {
       if (!isExploded) {
         if (isHoveredEast.current) {
           setExploded('east')
+          if (audioEastRef.current) {
+            audioEastRef.current.currentTime = 0
+            audioEastRef.current.play().catch(e => console.warn(e))
+          }
           document.body.style.cursor = 'auto'
         } else if (isHoveredNorth.current) {
           setExploded('north')
+          if (audioNorthRef.current) {
+            audioNorthRef.current.currentTime = 0
+            audioNorthRef.current.play().catch(e => console.warn(e))
+          }
           document.body.style.cursor = 'auto'
         } else if (isHoveredSouth.current) {
           setExploded('south')
+          if (audioSouthRef.current) {
+            audioSouthRef.current.currentTime = 0
+            audioSouthRef.current.play().catch(e => console.warn(e))
+          }
           document.body.style.cursor = 'auto'
         } else if (isHoveredWest.current) {
           setExploded('west')
+          if (audioWestRef.current) {
+            audioWestRef.current.currentTime = 0
+            audioWestRef.current.play().catch(e => console.warn(e))
+          }
           document.body.style.cursor = 'auto'
         }
         return

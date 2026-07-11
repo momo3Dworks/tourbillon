@@ -3,11 +3,15 @@ import { useSyncExternalStore } from 'react'
 let state = {
   isPlayingAll: false,
   volumeVaultDoor: 1.0,
-  volumeTourbillonClick: 1.0,
-  volumeTourbillonProximity: 0.5,
-  volumeTourbillonProximity2: 0.3,
+  volumeTourbillonClick: 0.7,
+  volumeTourbillonProximity: 0.2,
+  volumeTourbillonProximity2: 0.1,
   volumeDoors: 0.0,
   volumeGearsRandom: 0.3,
+  volumeTourbillonNorthOpened: 0.8,
+  volumeTourbillonEastOpened: 0.8,
+  volumeTourbillonSouthOpened: 0.8,
+  volumeTourbillonWestOpened: 0.8,
   activeNavIndex: 0,
   isMobile: false,
   mobileTooltipFontSize: 9,
@@ -45,6 +49,10 @@ export const setVolumeTourbillonProximity = (vol) => audioStore.setState({ volum
 export const setVolumeTourbillonProximity2 = (vol) => audioStore.setState({ volumeTourbillonProximity2: vol })
 export const setVolumeDoors = (vol) => audioStore.setState({ volumeDoors: vol })
 export const setVolumeGearsRandom = (vol) => audioStore.setState({ volumeGearsRandom: vol })
+export const setVolumeTourbillonNorthOpened = (vol) => audioStore.setState({ volumeTourbillonNorthOpened: vol })
+export const setVolumeTourbillonEastOpened = (vol) => audioStore.setState({ volumeTourbillonEastOpened: vol })
+export const setVolumeTourbillonSouthOpened = (vol) => audioStore.setState({ volumeTourbillonSouthOpened: vol })
+export const setVolumeTourbillonWestOpened = (vol) => audioStore.setState({ volumeTourbillonWestOpened: vol })
 export const setActiveNavIndex = (idx) => audioStore.setState({ activeNavIndex: idx })
 export const setIsMobile = (isMobile) => audioStore.setState({ isMobile })
 export const setMobileTooltipFontSize = (size) => audioStore.setState({ mobileTooltipFontSize: size })
