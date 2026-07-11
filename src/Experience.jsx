@@ -450,17 +450,27 @@ const FadeIn = ({ delayMs = 1500 }) => {
 const Experience = () => {
   const controls = useLevaControls()
   const { ambient, dirLight, shadow, env, bloom, dof, color, vignette, ca, transmission, ssr } = controls
+  const { isMacroAlquimia } = useExploded()
   const dirLightRef = useRef()
 
   useFrame((state) => {
     if (dirLightRef.current) {
-      if (dirLight.animate) {
+      if (isMacroAlquimia) {
+        // Interactive lighting with cursor during macro view
+        const targetX = dirLight.position[0] + state.mouse.x * 15.0;
+        const targetZ = dirLight.position[2] + state.mouse.y * -15.0;
+        dirLightRef.current.position.x += (targetX - dirLightRef.current.position.x) * 0.05;
+        dirLightRef.current.position.z += (targetZ - dirLightRef.current.position.z) * 0.05;
+        dirLightRef.current.position.y += (dirLight.position[1] - dirLightRef.current.position.y) * 0.05;
+      } else if (dirLight.animate) {
         const time = state.clock.elapsedTime * dirLight.speed
         dirLightRef.current.position.x = dirLight.position[0] + Math.cos(time) * dirLight.radius
         dirLightRef.current.position.z = dirLight.position[2] + Math.sin(time) * dirLight.radius
         dirLightRef.current.position.y = dirLight.position[1]
       } else {
-        dirLightRef.current.position.set(...dirLight.position)
+        dirLightRef.current.position.x += (dirLight.position[0] - dirLightRef.current.position.x) * 0.05;
+        dirLightRef.current.position.y += (dirLight.position[1] - dirLightRef.current.position.y) * 0.05;
+        dirLightRef.current.position.z += (dirLight.position[2] - dirLightRef.current.position.z) * 0.05;
       }
     }
   })

@@ -99,9 +99,9 @@ export const MOBILE_WAYPOINTS = [
     dof: { focusDistance: 5, focalLength: 100, bokehScale: 8 },
   },
   {
-    position: [3, 8, 9],
-    target: [0, 1, 0],
-    fov: 60,
+    position: [0, 11.5, 1],
+    target: [0, 0.5, 0],
+    fov: 70,
     dof: { focusDistance: 2.5, focalLength: 50, bokehScale: 8 },
   },
 
@@ -259,12 +259,30 @@ export const DESKTOP_EAST_SECTION_WAYPOINTS = {
     fov: 60,
     dof: { focusDistance: 10, focalLength: 10, bokehScale: 6 },
   },
+  // ── AlquimiaCircleOuter macro close-up ──────────────────────────────────
+  alquimia_macro: {
+    position: [0.7, 5.2, 8],
+    target: [0, 5, 0],
+    fov: 35,
+    dof: { focusDistance: 2.5, focalLength: 80, bokehScale: 6 },
+  },
 }
 
 export const MOBILE_EAST_SECTION_WAYPOINTS = Object.fromEntries(
   Object.entries(DESKTOP_EAST_SECTION_WAYPOINTS).map(([k, v]) => [k, { ...v, position: [v.position[0] * 1.2, v.position[1] * 1.2, v.position[2] * 1.5] }])
 )
 export const getEastWaypoints = (isMobile) => isMobile ? MOBILE_EAST_SECTION_WAYPOINTS : DESKTOP_EAST_SECTION_WAYPOINTS;
+
+// ── Alquimia Macro View — runtime override written by TourbillonAnimations via Leva ──
+// Values are synced from Leva every time they change. CameraRig reads this object
+// when activeSection === 'alquimia_macro' to apply the live-tunable camera position.
+export const alquimiaMacroCamOverride = {
+  active: true,
+  position: [0.7, 5.2, 8],
+  target: [0, 5, 0],
+  fov: 35,
+  dof: { focusDistance: 2.5, focalLength: 80, bokehScale: 6 },
+}
 
 // Backward-compatible alias (used in App.jsx)
 export const WAYPOINTS = DESKTOP_WAYPOINTS;
@@ -539,6 +557,16 @@ const CameraRig = () => {
           targetFocusDist = sd?.focusDistance ?? explodedCam.focusDistance
           targetFocalLen = sd?.focalLength ?? explodedCam.focalLength
           targetBokeh = sd?.bokehScale ?? explodedCam.bokehScale
+        }
+        // Live Leva override for the AlquimiaCircleOuter macro view
+        if (activeSection === 'alquimia_macro' && alquimiaMacroCamOverride.active) {
+          targetPos = new THREE.Vector3(...alquimiaMacroCamOverride.position)
+          targetLookAt = new THREE.Vector3(...alquimiaMacroCamOverride.target)
+          targetFov = alquimiaMacroCamOverride.fov
+          const aod = alquimiaMacroCamOverride.dof
+          targetFocusDist = aod.focusDistance
+          targetFocalLen = aod.focalLength
+          targetBokeh = aod.bokehScale
         }
       }
 

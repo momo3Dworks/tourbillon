@@ -9,7 +9,9 @@ import { scrollProgress } from './CameraRig'
 
 import { useControls } from 'leva'
 import { injectGridTransition } from './utils/GridTransition'
+import { applyTransmissionWebGL } from './utils/applyTransmissionWebGL'
 import { useExploded } from './ExplodedContext'
+import gsap from 'gsap'
 
 // Pieces that are exempt from GridTransition — must match TourbillonAnimations.jsx
 const EXPLODED_PIECE_NAMES = [
@@ -332,7 +334,35 @@ const SceneModels = ({
 
   }, [actions, allAnimations, mixer])
 
-  const { progressTunnelFloor, progressCrystals, progressDome, progressSystem, progressUnified } = useExploded()
+  const { progressTunnelFloor, progressCrystals, progressDome, progressSystem, progressUnified, isExploded } = useExploded()
+
+  const gemMaterialRef = useRef(null)
+  const flaskMaterialRef = useRef(null)
+  const flaskFlameMaterialRef = useRef(null)
+
+  // Animate transmission progress when East exploded view is active
+  useEffect(() => {
+    const targetVal = isExploded === 'east' ? 1.0 : 0.0
+
+    const animateMat = (matRef) => {
+      if (matRef.current) {
+        gsap.to(matRef.current.userData, {
+          uProgress: targetVal,
+          duration: 1.5,
+          ease: 'power2.inOut',
+          onUpdate: () => {
+            if (matRef.current.userData.shader) {
+              matRef.current.userData.shader.uniforms.uProgress.value = matRef.current.userData.uProgress;
+            }
+          }
+        })
+      }
+    }
+
+    animateMat(gemMaterialRef)
+    animateMat(flaskMaterialRef)
+    animateMat(flaskFlameMaterialRef)
+  }, [isExploded])
 
   // Process Doors_camera to swap Y and Z
   const extractedCamera = useMemo(() => {
@@ -441,8 +471,8 @@ const SceneModels = ({
               child.name === 'TourbillonNorthOutter' ||
               (child.material && (
                 child.material.name === 'TourbillonGlass' ||
-                child.material.name === 'GemGlass' ||
-                child.material.name === 'AlquimiaFlask' ||
+
+
                 child.material.transmission > 0 ||
                 (Array.isArray(child.material) && child.material.some(m => m.name === 'TourbillonGlass' || m.transmission > 0))
               ))
@@ -654,33 +684,36 @@ const SceneModels = ({
 
         const isGem = mat.name === 'GemGlass'
         const isFlask = mat.name === 'AlquimiaFlask'
-        if (!isGem && !isFlask) return mat
+        const isFlaskFlame = mat.name === 'FlaskFlame'
+        if (!isGem && !isFlask && !isFlaskFlame) return mat
 
         const phys = new THREE.MeshPhysicalMaterial({
           // Copy base properties from original
-          color: mat.color.clone(),
-          roughness: mat.roughness,
-          metalness: mat.metalness,
+          color: isFlask ? new THREE.Color('#be460eff') : mat.color.clone(),
           map: mat.map,
           normalMap: mat.normalMap,
           normalScale: mat.normalScale?.clone(),
           envMapIntensity: mat.envMapIntensity,
           side: THREE.DoubleSide,
-          // Transmission
-          transmission: 1.0,
-          transparent: true,
-          opacity: 1.0,
-          ior: isGem ? 1.5 : 1.33,
-          thickness: 0.5,
         })
         phys.name = mat.name
         phys.userData = { ...mat.userData, upgradedToPhysical: true }
 
+        applyTransmissionWebGL(phys, /iPhone|iPad|iPod|Android/i.test(navigator.userAgent));
+
+        // Initial state sync
+        phys.userData.uProgress = isExploded === 'east' ? 1.0 : 0.0;
+        if (phys.userData.shader) {
+          phys.userData.shader.uniforms.uProgress.value = phys.userData.uProgress;
+        }
+
         if (isGem) {
-          phys.iridescence = 1.0
-          phys.iridescenceIOR = 1.3
-          phys.iridescenceThicknessRange = [100, 400]
-          phys.dispersion = 3.0
+          gemMaterialRef.current = phys
+        } else if (isFlask) {
+          flaskMaterialRef.current = phys
+        }
+        else if (isFlaskFlame) {
+          flaskFlameMaterialRef.current = phys
         }
 
         mat.dispose()
@@ -807,7 +840,16 @@ const SceneModels = ({
       })
     })
 
-
+    // 4. Animate uTime for Alquimia Transmission materials
+    if (gemMaterialRef.current?.userData?.shader) {
+      gemMaterialRef.current.userData.shader.uniforms.uTime.value = state.clock.elapsedTime;
+    }
+    if (flaskMaterialRef.current?.userData?.shader) {
+      flaskMaterialRef.current.userData.shader.uniforms.uTime.value = state.clock.elapsedTime;
+    }
+    if (flaskFlameMaterialRef.current?.userData?.shader) {
+      flaskFlameMaterialRef.current.userData.shader.uniforms.uTime.value = state.clock.elapsedTime;
+    }
   })
 
   return (

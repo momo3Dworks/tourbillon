@@ -15,6 +15,7 @@ export const translations = {
       meetTourbillon: 'Meet The Tourbillon',
       scrollDown: 'Scroll down to meet THETourbillon',
       backToEntrance: '↑ Back to Entrance',
+      backFromMacro: '← Back to Overview',
       brandApothecary: 'THEapothecary',
       brandHotel: 'THEhotel',
       brandPhilosophy: 'MAD (The Philosophy / The Brand)',

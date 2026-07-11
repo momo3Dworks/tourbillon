@@ -6,7 +6,7 @@ import { useAdvancedGLTF, globalActions } from './SceneModels'
 import * as THREE from 'three'
 import gsap from 'gsap'
 import { useExploded } from './ExplodedContext'
-import { waypointCameraState } from './CameraRig'
+import { waypointCameraState, alquimiaMacroCamOverride } from './CameraRig'
 import { applyChunkExplosion } from './utils/ChunkExplode'
 import { applyMagicShockwave } from './utils/MagicShockwave'
 import { audioStore, useAudioStore } from './store/audioStore'
@@ -167,6 +167,7 @@ const TourbillonAnimations = () => {
     activeSection, setActiveSection,
     hoverTitle, setHoverTitle,
     setExternalLink,
+    isMacroAlquimia, setIsMacroAlquimia,
   } = useExploded()
 
   // Retrieve the cached gltfs
@@ -188,6 +189,26 @@ const TourbillonAnimations = () => {
     scale: { value: 1.0, min: 0.1, max: 10, step: 0.1, label: 'Scale' },
     rot: { value: [0, 0, 0], step: 0.05, label: 'Rotation' }
   })
+
+
+
+  // ── AlquimiaCircleOuter macro close-up camera — tweak live with Leva ────────────────
+  const {
+    alqMacroPosX, alqMacroPosY, alqMacroPosZ,
+    alqMacroTgtX, alqMacroTgtY, alqMacroTgtZ,
+    alqMacroFov, alqMacroFocusDist, alqMacroFocalLen, alqMacroBokeh
+  } = useControls('Alquimia Macro Cam', {
+    alqMacroPosX: { value: -0.4, step: 0.1, label: 'Pos X' },
+    alqMacroPosY: { value: 5.2, step: 0.1, label: 'Pos Y' },
+    alqMacroPosZ: { value: 8, step: 0.1, label: 'Pos Z' },
+    alqMacroTgtX: { value: 3, step: 0.1, label: 'Target X' },
+    alqMacroTgtY: { value: 6, step: 0.1, label: 'Target Y' },
+    alqMacroTgtZ: { value: 2, step: 0.1, label: 'Target Z' },
+    alqMacroFov: { value: 35, min: 10, max: 120, step: 1, label: 'FoV' },
+    alqMacroFocusDist: { value: 0.5, min: 0.1, max: 100, step: 0.1, label: 'Focus Dist' },
+    alqMacroFocalLen: { value: 80, min: 1, max: 150, step: 1, label: 'Focal Length' },
+    alqMacroBokeh: { value: 6, min: 0, max: 20, step: 0.1, label: 'Bokeh Scale' },
+  }, { collapsed: true })
 
   // Leva controls for SVG Illusion
   const hhLogoRef = useRef(null)
@@ -239,6 +260,22 @@ const TourbillonAnimations = () => {
   const domeRef = useRef(null)
   const explodedPiecesRef = useRef({})
   const prevExplodedRef = useRef(null)
+
+  // ── AlquimiaCircleOuter: hover state (drives button visibility) + button safety ref ──
+  const [alquimiaHovered, setAlquimiaHovered] = useState(false)
+  const isOverMadGemsButton = useRef(false)
+
+  // ── Sync Leva macro-cam values → CameraRig override object every time they change ──
+  useEffect(() => {
+    alquimiaMacroCamOverride.active = isMacroAlquimia
+    alquimiaMacroCamOverride.position = [alqMacroPosX, alqMacroPosY, alqMacroPosZ]
+    alquimiaMacroCamOverride.target = [alqMacroTgtX, alqMacroTgtY, alqMacroTgtZ]
+    alquimiaMacroCamOverride.fov = alqMacroFov
+    alquimiaMacroCamOverride.dof = { focusDistance: alqMacroFocusDist, focalLength: alqMacroFocalLen, bokehScale: alqMacroBokeh }
+  }, [isMacroAlquimia,
+    alqMacroPosX, alqMacroPosY, alqMacroPosZ,
+    alqMacroTgtX, alqMacroTgtY, alqMacroTgtZ,
+    alqMacroFov, alqMacroFocusDist, alqMacroFocalLen, alqMacroBokeh])
 
   // ── Explode / Collapse animation ─────────────────────────────────────────
   // Shockwave hover uniforms
@@ -816,7 +853,7 @@ const TourbillonAnimations = () => {
 
           if (pieces['AlquimiaCircleOuter']) {
             pieces['AlquimiaCircleOuter'].userData.worldExplodedY = mob(5, 5.2)
-            gsap.to(pieces['AlquimiaCircleOuter'].position, { x: mob(0, 0.25), y: pieces['AlquimiaCircleOuter'].userData.worldExplodedY, z: mob(7.3, 5), duration: 2.0, ease: 'power3.out' })
+            gsap.to(pieces['AlquimiaCircleOuter'].position, { x: mob(0, 0.1), y: pieces['AlquimiaCircleOuter'].userData.worldExplodedY, z: mob(7.3, 5), duration: 2.0, ease: 'power3.out' })
           }
         } else if (isExploded === 'north') {
           // North exploded animations (WORLD SPACE)
@@ -936,7 +973,7 @@ const TourbillonAnimations = () => {
             })
           }
           if (pieces['TourbillonSouthInnerG4']) {
-            gsap.to(pieces['TourbillonSouthInnerG4'].position, { x: mob(-2.5, 0), y: mob(4.8, 4.65), z: mob(5.8, 6), duration: 2.8, ease: 'power3.out' })
+            gsap.to(pieces['TourbillonSouthInnerG4'].position, { x: mob(-2.5, 0), y: mob(4.8, 4.9), z: mob(5.8, 6), duration: 2.8, ease: 'power3.out' })
             gsap.to(pieces['TourbillonSouthInnerG4'].rotation, {
               x: pieces['TourbillonSouthInnerG4'].userData.defaultRot.x,
               y: pieces['TourbillonSouthInnerG4'].userData.defaultRot.y,
@@ -945,7 +982,7 @@ const TourbillonAnimations = () => {
             })
           }
           if (pieces['TourbillonSouthInnerG2']) {
-            gsap.to(pieces['TourbillonSouthInnerG2'].position, { x: mob(-1.8, 0), y: mob(4.8, 3.5), z: mob(5.8, 6), duration: 3.0, ease: 'power3.out' })
+            gsap.to(pieces['TourbillonSouthInnerG2'].position, { x: mob(-1.8, 0), y: mob(4.8, 3.9), z: mob(5.8, 6), duration: 3.0, ease: 'power3.out' })
             gsap.to(pieces['TourbillonSouthInnerG2'].rotation, {
               x: pieces['TourbillonSouthInnerG2'].userData.defaultRot.x,
               y: pieces['TourbillonSouthInnerG2'].userData.defaultRot.y + 7,
@@ -1130,6 +1167,9 @@ const TourbillonAnimations = () => {
       isHoveredAlquimia.current = false
       isHoveredInnerRing.current = false
       isHoveredDome.current = false
+      setAlquimiaHovered(false)
+      setIsMacroAlquimia(false)
+      isOverMadGemsButton.current = false
       isHoveredNorthOutter.current = false
       isHoveredNorthInner.current = false
       isHoveredNorthG4.current = false
@@ -1282,7 +1322,8 @@ const TourbillonAnimations = () => {
       })
     }
   }, [isExploded, scene, forceAllProgressTo, setNonExplodedMeshesVisible,
-    progressTunnelFloor, progressCrystals, progressDome, progressSystem, progressUnified, setTooltip, setActiveSection])
+    progressTunnelFloor, progressCrystals, progressDome, progressSystem, progressUnified,
+    setTooltip, setActiveSection, setIsMacroAlquimia])
 
   // ── Per-frame logic ───────────────────────────────────────────────────────
   const _raycaster = new THREE.Raycaster()
@@ -1329,7 +1370,7 @@ const TourbillonAnimations = () => {
     // ── Update active piece rotations + UI tracking + Shockwave ──────
     shockwaveUniformsRef.current.forEach(({ uniforms, hoverRef }) => {
       uniforms.uMSTime.value = state.clock.elapsedTime
-      
+
       // Animate hover 0 to 1
       const targetHover = hoverRef.current ? 1.0 : 0.0
       uniforms.uMSHover.value = THREE.MathUtils.lerp(uniforms.uMSHover.value, targetHover, 1 - Math.pow(0.005, delta))
@@ -1445,10 +1486,11 @@ const TourbillonAnimations = () => {
         const alquimiaCollider = alquimiaColliderRef.current
         const alquimiaMesh = explodedPiecesRef.current['AlquimiaCircleOuter']
         if (alquimiaCollider) {
-          const hit = _raycaster.intersectObject(alquimiaCollider, false).length > 0
+          const hit = !isMacroAlquimia && _raycaster.intersectObject(alquimiaCollider, false).length > 0
 
           if (hit && !isHoveredAlquimia.current) {
             isHoveredAlquimia.current = true
+            setAlquimiaHovered(true)
             document.body.style.cursor = 'pointer'
             setTooltip({ text: 'Go to Alquimia Apothecary' })
             waypointCameraState.hoveredObject = 'AlquimiaCircleOuter'
@@ -1464,6 +1506,7 @@ const TourbillonAnimations = () => {
             }
           } else if (!hit && isHoveredAlquimia.current) {
             isHoveredAlquimia.current = false
+            setAlquimiaHovered(false)
             document.body.style.cursor = 'auto'
             setTooltip(null)
             if (waypointCameraState.hoveredObject === 'AlquimiaCircleOuter') {
@@ -1583,9 +1626,14 @@ const TourbillonAnimations = () => {
               waypointCameraState.hoveredObject = meshName
               gsap.killTweensOf(mesh.position)
               gsap.to(mesh.position, { y: '+=0.03', duration: 1.5, yoyo: true, repeat: -1, ease: 'sine.inOut' })
-              if (CHUNK_EXPLODE_TARGETS.includes(meshName) && mesh.material.userData.uChunkProgress) {
-                gsap.killTweensOf(mesh.material.userData.uChunkProgress)
-                gsap.to(mesh.material.userData.uChunkProgress, { value: 1.0, duration: 0.8, ease: 'power2.out' })
+              if (CHUNK_EXPLODE_TARGETS.includes(meshName)) {
+                const mats = Array.isArray(mesh.material) ? mesh.material : [mesh.material]
+                mats.forEach(mat => {
+                  if (mat?.userData?.uChunkProgress) {
+                    gsap.killTweensOf(mat.userData.uChunkProgress)
+                    gsap.to(mat.userData.uChunkProgress, { value: 1.0, duration: 0.8, ease: 'power2.out' })
+                  }
+                })
               }
             } else if (!hit && isHoveredRef.current) {
               isHoveredRef.current = false
@@ -1596,9 +1644,14 @@ const TourbillonAnimations = () => {
                 gsap.killTweensOf(mesh.position)
                 gsap.to(mesh.position, { y: mesh.userData.worldExplodedY, duration: 1.0, ease: 'power2.out' })
               }
-              if (CHUNK_EXPLODE_TARGETS.includes(meshName) && mesh.material.userData.uChunkProgress) {
-                gsap.killTweensOf(mesh.material.userData.uChunkProgress)
-                gsap.to(mesh.material.userData.uChunkProgress, { value: 0.0, duration: 0.8, ease: 'power2.out' })
+              if (CHUNK_EXPLODE_TARGETS.includes(meshName)) {
+                const mats = Array.isArray(mesh.material) ? mesh.material : [mesh.material]
+                mats.forEach(mat => {
+                  if (mat?.userData?.uChunkProgress) {
+                    gsap.killTweensOf(mat.userData.uChunkProgress)
+                    gsap.to(mat.userData.uChunkProgress, { value: 0.0, duration: 0.8, ease: 'power2.out' })
+                  }
+                })
               }
             }
             if (isHoveredRef.current) mesh.rotation.y += delta * 1.0
@@ -1624,9 +1677,14 @@ const TourbillonAnimations = () => {
               if (m) {
                 gsap.killTweensOf(m.position)
                 gsap.to(m.position, { y: '+=0.03', duration: 1.5, yoyo: true, repeat: -1, ease: 'sine.inOut' })
-                if (CHUNK_EXPLODE_TARGETS.includes(name) && m.material.userData.uChunkProgress) {
-                  gsap.killTweensOf(m.material.userData.uChunkProgress)
-                  gsap.to(m.material.userData.uChunkProgress, { value: 1.0, duration: 0.8, ease: 'power2.out' })
+                if (CHUNK_EXPLODE_TARGETS.includes(name)) {
+                  const mats = Array.isArray(m.material) ? m.material : [m.material]
+                  mats.forEach(mat => {
+                    if (mat?.userData?.uChunkProgress) {
+                      gsap.killTweensOf(mat.userData.uChunkProgress)
+                      gsap.to(mat.userData.uChunkProgress, { value: 1.0, duration: 0.8, ease: 'power2.out' })
+                    }
+                  })
                 }
               }
             })
@@ -1642,9 +1700,14 @@ const TourbillonAnimations = () => {
                   gsap.killTweensOf(m.position)
                   gsap.to(m.position, { y: m.userData.worldExplodedY, duration: 1.0, ease: 'power2.out' })
                 }
-                if (CHUNK_EXPLODE_TARGETS.includes(name) && m.material.userData.uChunkProgress) {
-                  gsap.killTweensOf(m.material.userData.uChunkProgress)
-                  gsap.to(m.material.userData.uChunkProgress, { value: 0.0, duration: 0.8, ease: 'power2.out' })
+                if (CHUNK_EXPLODE_TARGETS.includes(name)) {
+                  const mats = Array.isArray(m.material) ? m.material : [m.material]
+                  mats.forEach(mat => {
+                    if (mat?.userData?.uChunkProgress) {
+                      gsap.killTweensOf(mat.userData.uChunkProgress)
+                      gsap.to(mat.userData.uChunkProgress, { value: 0.0, duration: 0.8, ease: 'power2.out' })
+                    }
+                  })
                 }
               }
             })
@@ -1694,9 +1757,14 @@ const TourbillonAnimations = () => {
               waypointCameraState.hoveredObject = meshName
               gsap.killTweensOf(mesh.position)
               gsap.to(mesh.position, { y: '+=0.03', duration: 1.5, yoyo: true, repeat: -1, ease: 'sine.inOut' })
-              if (CHUNK_EXPLODE_TARGETS.includes(meshName) && mesh.material.userData.uChunkProgress) {
-                gsap.killTweensOf(mesh.material.userData.uChunkProgress)
-                gsap.to(mesh.material.userData.uChunkProgress, { value: 1.0, duration: 0.8, ease: 'power2.out' })
+              if (CHUNK_EXPLODE_TARGETS.includes(meshName)) {
+                const mats = Array.isArray(mesh.material) ? mesh.material : [mesh.material]
+                mats.forEach(mat => {
+                  if (mat?.userData?.uChunkProgress) {
+                    gsap.killTweensOf(mat.userData.uChunkProgress)
+                    gsap.to(mat.userData.uChunkProgress, { value: 1.0, duration: 0.8, ease: 'power2.out' })
+                  }
+                })
               }
             } else if (!hit && isHoveredRef.current) {
               isHoveredRef.current = false
@@ -1707,9 +1775,14 @@ const TourbillonAnimations = () => {
                 gsap.killTweensOf(mesh.position)
                 gsap.to(mesh.position, { y: mesh.userData.worldExplodedY, duration: 1.0, ease: 'power2.out' })
               }
-              if (CHUNK_EXPLODE_TARGETS.includes(meshName) && mesh.material.userData.uChunkProgress) {
-                gsap.killTweensOf(mesh.material.userData.uChunkProgress)
-                gsap.to(mesh.material.userData.uChunkProgress, { value: 0.0, duration: 0.8, ease: 'power2.out' })
+              if (CHUNK_EXPLODE_TARGETS.includes(meshName)) {
+                const mats = Array.isArray(mesh.material) ? mesh.material : [mesh.material]
+                mats.forEach(mat => {
+                  if (mat?.userData?.uChunkProgress) {
+                    gsap.killTweensOf(mat.userData.uChunkProgress)
+                    gsap.to(mat.userData.uChunkProgress, { value: 0.0, duration: 0.8, ease: 'power2.out' })
+                  }
+                })
               }
             }
             if (isHoveredRef.current) mesh.rotation.y += delta * 1.0
@@ -1735,9 +1808,14 @@ const TourbillonAnimations = () => {
               if (m) {
                 gsap.killTweensOf(m.position)
                 gsap.to(m.position, { y: '+=0.03', duration: 1.5, yoyo: true, repeat: -1, ease: 'sine.inOut' })
-                if (CHUNK_EXPLODE_TARGETS.includes(name) && m.material.userData.uChunkProgress) {
-                  gsap.killTweensOf(m.material.userData.uChunkProgress)
-                  gsap.to(m.material.userData.uChunkProgress, { value: 1.0, duration: 0.8, ease: 'power2.out' })
+                if (CHUNK_EXPLODE_TARGETS.includes(name)) {
+                  const mats = Array.isArray(m.material) ? m.material : [m.material]
+                  mats.forEach(mat => {
+                    if (mat?.userData?.uChunkProgress) {
+                      gsap.killTweensOf(mat.userData.uChunkProgress)
+                      gsap.to(mat.userData.uChunkProgress, { value: 1.0, duration: 0.8, ease: 'power2.out' })
+                    }
+                  })
                 }
               }
             })
@@ -1753,9 +1831,14 @@ const TourbillonAnimations = () => {
                   gsap.killTweensOf(m.position)
                   gsap.to(m.position, { y: m.userData.worldExplodedY, duration: 1.0, ease: 'power2.out' })
                 }
-                if (CHUNK_EXPLODE_TARGETS.includes(name) && m.material.userData.uChunkProgress) {
-                  gsap.killTweensOf(m.material.userData.uChunkProgress)
-                  gsap.to(m.material.userData.uChunkProgress, { value: 0.0, duration: 0.8, ease: 'power2.out' })
+                if (CHUNK_EXPLODE_TARGETS.includes(name)) {
+                  const mats = Array.isArray(m.material) ? m.material : [m.material]
+                  mats.forEach(mat => {
+                    if (mat?.userData?.uChunkProgress) {
+                      gsap.killTweensOf(mat.userData.uChunkProgress)
+                      gsap.to(mat.userData.uChunkProgress, { value: 0.0, duration: 0.8, ease: 'power2.out' })
+                    }
+                  })
                 }
               }
             })
@@ -1915,7 +1998,7 @@ const TourbillonAnimations = () => {
 
 
       if (isExploded === 'east') {
-        if (isHoveredAlquimia.current) {
+        if (isHoveredAlquimia.current && !isOverMadGemsButton.current) {
           setExternalLink({ url: 'https://hotelherrera.com/alquimia' })
           return
         }

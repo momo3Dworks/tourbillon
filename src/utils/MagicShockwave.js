@@ -1,4 +1,4 @@
-﻿import * as THREE from 'three'
+import * as THREE from 'three'
 
 // ─────────────────────────────────────────────────────────────────────────────
 // applyMagicShockwave
@@ -63,6 +63,8 @@ export const applyMagicShockwave = (material) => {
   const prevOBC = material.onBeforeCompile
   material.onBeforeCompile = (shader, renderer) => {
     if (prevOBC) prevOBC(shader, renderer)
+
+    if (!shader || !shader.uniforms) return
 
     // Merge our uniforms into the program
     Object.assign(shader.uniforms, uniforms)

@@ -5,7 +5,7 @@ import Navbar from './components/Navbar'
 import Loader from './components/Loader'
 import Experience from './Experience'
 import CameraRig, { WAYPOINTS } from './CameraRig'
-import { Leva } from 'leva'
+import { Leva, useControls } from 'leva'
 import { Perf } from "r3f-webgpu-perf";
 import { useExploded } from './ExplodedContext'
 import ExplodedUI from './components/ExplodedUI'
@@ -17,8 +17,8 @@ import './index.css'
 // ── ExplodedViewButton ────────────────────────────────────────────────────────
 // Rendered outside the Canvas so position:fixed is relative to the real viewport
 const ExplodedViewButton = () => {
-  const { isExploded, setExploded } = useExploded()
-  if (!isExploded) return null
+  const { isExploded, setExploded, isMacroAlquimia } = useExploded()
+  if (!isExploded || isMacroAlquimia) return null
   return (
     <button
       onClick={() => setExploded(false)}
@@ -46,6 +46,101 @@ const ExplodedViewButton = () => {
       onMouseLeave={e => { e.currentTarget.style.boxShadow = '0 0 20px rgba(0,255,255,0.45)' }}
     >
       ← Back to Tourbillon
+    </button>
+  )
+}
+
+const MadGemsButton = () => {
+  const { isExploded, isMacroAlquimia, setIsMacroAlquimia, setActiveSection } = useExploded()
+
+  // Leva controls to let the user position it wherever they want
+  const { madGemsOffsetX, madGemsOffsetY } = useControls('MAD Gems Button', {
+    madGemsOffsetX: { value: 0, min: -1000, max: 1000, step: 1, label: 'Offset X (px)' },
+    madGemsOffsetY: { value: -60, min: -1000, max: 1000, step: 1, label: 'Offset Y (px)' },
+  }, { collapsed: true })
+
+  if (isExploded !== 'east' || isMacroAlquimia) return null
+
+  return (
+    <button
+      onClick={(e) => {
+        e.stopPropagation()
+        setActiveSection('alquimia_macro')
+        setIsMacroAlquimia(true)
+      }}
+      style={{
+        position: 'fixed',
+        bottom: '40px',
+        left: '50%',
+        transform: `translateX(-50%) translate(${madGemsOffsetX}px, ${madGemsOffsetY}px)`,
+        background: 'none',
+        border: 'none',
+        color: '#00ffff',
+        cursor: 'pointer',
+        zIndex: 1001,
+        fontFamily: "'Inter', 'Outfit', sans-serif",
+        fontSize: '14px',
+        fontWeight: 400,
+        letterSpacing: '3px',
+        textTransform: 'uppercase',
+        transition: 'all 0.3s ease',
+        display: 'flex',
+        alignItems: 'center',
+        gap: '8px',
+        textShadow: '0 0 10px rgba(0, 255, 255, 0.6)'
+      }}
+      onMouseEnter={e => {
+        e.currentTarget.style.color = '#ffffff'
+        e.currentTarget.style.textShadow = '0 0 15px rgba(255, 255, 255, 0.9), 0 0 25px rgba(0, 255, 255, 0.9)'
+        e.currentTarget.style.transform = `translateX(-50%) translate(${madGemsOffsetX}px, ${madGemsOffsetY}px) scale(1.05)`
+      }}
+      onMouseLeave={e => {
+        e.currentTarget.style.color = '#00ffff'
+        e.currentTarget.style.textShadow = '0 0 10px rgba(0, 255, 255, 0.6)'
+        e.currentTarget.style.transform = `translateX(-50%) translate(${madGemsOffsetX}px, ${madGemsOffsetY}px) scale(1)`
+      }}
+    >
+      💎 See the MAD Gems
+    </button>
+  )
+}
+
+const MacroBackButton = () => {
+  const { isMacroAlquimia, setIsMacroAlquimia, setActiveSection } = useExploded()
+
+  if (!isMacroAlquimia) return null
+
+  return (
+    <button
+      onClick={(e) => {
+        e.stopPropagation()
+        setActiveSection('none')
+        setIsMacroAlquimia(false)
+      }}
+      style={{
+        position: 'fixed',
+        bottom: '40px',
+        left: '50%',
+        transform: 'translateX(-50%)',
+        padding: '12px 32px',
+        background: 'rgba(5, 15, 20, 0.85)',
+        border: '1px solid #00ffff',
+        color: '#00ffff',
+        cursor: 'pointer',
+        zIndex: 1000,
+        boxShadow: '0 0 20px rgba(0, 255, 255, 0.45)',
+        fontFamily: 'sans-serif',
+        fontSize: '13px',
+        letterSpacing: '2px',
+        textTransform: 'uppercase',
+        backdropFilter: 'blur(6px)',
+        transition: 'box-shadow 0.3s ease',
+        pointerEvents: 'auto',
+      }}
+      onMouseEnter={e => { e.currentTarget.style.boxShadow = '0 0 35px rgba(0,255,255,0.75)' }}
+      onMouseLeave={e => { e.currentTarget.style.boxShadow = '0 0 20px rgba(0,255,255,0.45)' }}
+    >
+      ← Back to Exploded View
     </button>
   )
 }
@@ -105,6 +200,8 @@ function App() {
       <Navbar />
       {/* DOM-level exploded view return button — position:fixed relative to real viewport */}
       <ExplodedViewButton />
+      <MadGemsButton />
+      <MacroBackButton />
       {/* Exploded View overlay: title, tooltip, science panel */}
       <ExplodedUI />
       {/* Cinematic Intro Overlay */}
