@@ -22,6 +22,8 @@ const EXPLODED_PIECE_NAMES = [
   'AlquimiaCircleInner',
   'AlquimiaSquare',
   'AlquimiaTourbillonDome',
+  'AlquimiaGear1',
+  'AlquimiaGear2',
   'TourbillonNorthOutter',
   'TourbillonNorthInner',
   'TourbillonNorthInnerG4',
@@ -167,6 +169,9 @@ const SceneModels = ({
   const floorColorMap = useLoader(TextureLoader, FLOOR_COLOR_MAP_PATH)
   const floorNormalMap = useLoader(TextureLoader, FLOOR_NORMAL_MAP_PATH)
 
+  // ── AlquimiaWeight (Metal4Base) normal-map override ─────────────────────────
+  const weightNormalMap = useLoader(TextureLoader, '/textures/Metal4Base Normal.webp')
+
   // Setup VaultDoor Animations
   const vaultDoorAnims = useAnimations(vaultDoor.animations, vaultDoor.scene)
 
@@ -196,6 +201,7 @@ const SceneModels = ({
       CenterPivotRotation: 1485,
       PinNorth: 720,
       AlquimiaTourbillonDome: 600,
+      AlquimiaTourbillonDome2: 600,
       TourbillonNorthInnerG4: 475,
       TourbillonEastInnerG4: 600,
       TourbillonNorthInnerG3: 363,
@@ -239,6 +245,7 @@ const SceneModels = ({
       WestSpiralGadget: 7,
       PinSouth: 720,
       TourbillonEastInnerG4_PinEast: 600,
+      TourbillonEastInnerG4_PinEast2: 600,
       Triangle2: 155,
       InnerCircle2: 217,
       TourbillonGearToFlyingEast: 225,
@@ -338,7 +345,30 @@ const SceneModels = ({
 
   const gemMaterialRef = useRef(null)
   const flaskMaterialRef = useRef(null)
-  const flaskFlameMaterialRef = useRef(null)
+
+
+  // ── AlquimiaFlask transmission tuning ─────────────────────────────────────
+  const {
+    flaskIor,
+    flaskTh,
+    flaskDisp,
+  } = useControls('AlquimiaFlask Transmission', {
+    flaskIor: { value: 1.08, min: 1.0, max: 3.0, step: 0.01, label: 'IOR' },
+    flaskTh: { value: 1.0, min: 0.0, max: 10.0, step: 0.05, label: 'Thickness Mult' },
+    flaskDisp: { value: 1.0, min: 0.0, max: 5.0, step: 0.05, label: 'Dispersion' },
+  }, { collapsed: true })
+
+  // Push Flask-specific shader uniforms live whenever Leva values change
+  useEffect(() => {
+    const mat = flaskMaterialRef.current
+    if (!mat) return
+    mat.ior = flaskIor
+    if (mat.userData?.shader) {
+      mat.userData.shader.uniforms.uIor.value = flaskIor
+      mat.userData.shader.uniforms.uTh.value = flaskTh
+      mat.userData.shader.uniforms.uDisp.value = flaskDisp
+    }
+  }, [flaskIor, flaskTh, flaskDisp])
 
   // Animate transmission progress when East exploded view is active
   useEffect(() => {
@@ -361,7 +391,7 @@ const SceneModels = ({
 
     animateMat(gemMaterialRef)
     animateMat(flaskMaterialRef)
-    animateMat(flaskFlameMaterialRef)
+
   }, [isExploded])
 
   // Process Doors_camera to swap Y and Z
@@ -611,6 +641,41 @@ const SceneModels = ({
     floorTextureConfig.normalMapScaleV,
   ])
 
+  // ── Apply external normal map to AlquimiaWeight mesh (Metal4Base material) ──
+  useEffect(() => {
+    if (!weightNormalMap) return
+
+    tourbillonSystem.scene.traverse((child) => {
+      if (!child.isMesh) return
+
+      // Match by mesh name or material name
+      const meshMatch =
+        child.name === 'AlquimiaWeight' ||
+        child.name === 'AlquimiaWeight_1'
+      const matArray = Array.isArray(child.material) ? child.material : [child.material]
+      const matMatch = matArray.some(
+        m => m.name === 'Metal4Base' || m.name === 'Metal4Base_1'
+      )
+      if (!meshMatch && !matMatch) return
+
+      matArray.forEach((mat) => {
+        const isTarget =
+          mat.name === 'Metal4Base' ||
+          mat.name === 'Metal4Base_1' ||
+          meshMatch
+        if (!isTarget) return
+
+        if (mat.normalMap && mat.normalMap !== weightNormalMap) mat.normalMap.dispose()
+        weightNormalMap.wrapS = THREE.RepeatWrapping
+        weightNormalMap.wrapT = THREE.RepeatWrapping
+        weightNormalMap.colorSpace = THREE.NoColorSpace // normal maps must not be sRGB
+        weightNormalMap.needsUpdate = true
+        mat.normalMap = weightNormalMap
+        mat.needsUpdate = true
+      })
+    })
+  }, [tourbillonSystem, weightNormalMap])
+
   // ── Aplicar materiales emissive para que el Bloom tenga objetivos ──────────
   // Los materiales emissive son lo que el BloomNode convierte en glow.
   // Sin emissive > threshold, el bloom no se ve aunque esté configurado.
@@ -684,8 +749,8 @@ const SceneModels = ({
 
         const isGem = mat.name === 'GemGlass'
         const isFlask = mat.name === 'AlquimiaFlask'
-        const isFlaskFlame = mat.name === 'FlaskFlame'
-        if (!isGem && !isFlask && !isFlaskFlame) return mat
+
+        if (!isGem && !isFlask) return mat
 
         const phys = new THREE.MeshPhysicalMaterial({
           // Copy base properties from original
@@ -695,9 +760,10 @@ const SceneModels = ({
           normalScale: mat.normalScale?.clone(),
           envMapIntensity: mat.envMapIntensity,
           side: THREE.DoubleSide,
+          ior: isFlask ? flaskIor : 1.5,
         })
         phys.name = mat.name
-        phys.userData = { ...mat.userData, upgradedToPhysical: true }
+        phys.userData = { ...mat.userData, upgradedToPhysical: true, uIor: isFlask ? flaskIor : 1.5 }
 
         applyTransmissionWebGL(phys, /iPhone|iPad|iPod|Android/i.test(navigator.userAgent));
 
@@ -712,9 +778,7 @@ const SceneModels = ({
         } else if (isFlask) {
           flaskMaterialRef.current = phys
         }
-        else if (isFlaskFlame) {
-          flaskFlameMaterialRef.current = phys
-        }
+
 
         mat.dispose()
         return phys
@@ -847,9 +911,7 @@ const SceneModels = ({
     if (flaskMaterialRef.current?.userData?.shader) {
       flaskMaterialRef.current.userData.shader.uniforms.uTime.value = state.clock.elapsedTime;
     }
-    if (flaskFlameMaterialRef.current?.userData?.shader) {
-      flaskFlameMaterialRef.current.userData.shader.uniforms.uTime.value = state.clock.elapsedTime;
-    }
+
   })
 
   return (

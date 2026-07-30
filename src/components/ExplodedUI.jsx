@@ -474,8 +474,6 @@ const ExplodedUI = () => {
     language,
     externalLink,
     t,
-    isMacroAlquimia,
-    setIsMacroAlquimia,
     setActiveSection,
   } = useExploded()
 
@@ -614,50 +612,6 @@ const ExplodedUI = () => {
         >
           {t('explodedUI.scrollDown')}
         </div>
-      )}
-
-      {/* ── Back-from-macro Button ───────────────────────────── */}
-      {isMacroAlquimia && (
-        <button
-          onClick={(e) => {
-            e.stopPropagation()
-            setIsMacroAlquimia(false)
-            setActiveSection(null)
-          }}
-          onMouseEnter={e => {
-            e.currentTarget.style.boxShadow = '0 0 35px rgba(0,255,255,0.75)'
-            e.currentTarget.style.background = 'rgba(0,255,255,0.12)'
-          }}
-          onMouseLeave={e => {
-            e.currentTarget.style.boxShadow = '0 0 20px rgba(0,255,255,0.35)'
-            e.currentTarget.style.background = 'rgba(5, 15, 20, 0.85)'
-          }}
-          style={{
-            position: 'fixed',
-            top: '40px',
-            left: '40px',
-            padding: '12px 28px',
-            background: 'rgba(5, 15, 20, 0.85)',
-            border: '1px solid #00ffff',
-            color: '#00ffff',
-            cursor: 'pointer',
-            zIndex: 200,
-            boxShadow: '0 0 20px rgba(0,255,255,0.35)',
-            fontFamily: "'Inter', 'Outfit', sans-serif",
-            textTransform: 'uppercase',
-            letterSpacing: '2px',
-            fontSize: '12px',
-            backdropFilter: 'blur(8px)',
-            transition: 'box-shadow 0.25s ease, background 0.25s ease',
-            isolation: 'isolate',
-          }}
-        >
-          <OrnamentCorner position="top-left" size={22} opacity={0.9} />
-          <OrnamentCorner position="top-right" size={22} opacity={0.9} />
-          <OrnamentCorner position="bottom-left" size={22} opacity={0.9} />
-          <OrnamentCorner position="bottom-right" size={22} opacity={0.9} />
-          {t('explodedUI.backFromMacro')}
-        </button>
       )}
 
       {/* ── Back to Entrance Button ───────────────────────────── */}

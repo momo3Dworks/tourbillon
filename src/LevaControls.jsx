@@ -84,7 +84,7 @@ const useLevaControls = () => {
   const transmissionControls = useControls('Glass (TourbillonGlass)', {
     enabled: { value: true, label: 'Enabled' },
     transmission: { value: 1.0, min: 0, max: 1, step: 0.01, label: 'Transmission' },
-    ior: { value: 1.5, min: 1.0, max: 2.5, step: 0.01, label: 'IOR' },
+    ior: { value: 1.1, min: 1.0, max: 2.5, step: 0.01, label: 'IOR' },
     thickness: { value: 0.8, min: 0, max: 5, step: 0.05, label: 'Thickness' },
     dispersion: { value: 0.01, min: 0, max: 0.05, step: 0.001, label: 'Dispersion (CA)' },
     roughness: { value: 0.0, min: 0, max: 1, step: 0.01, label: 'Roughness' },

@@ -6,11 +6,10 @@ import { useAdvancedGLTF, globalActions } from './SceneModels'
 import * as THREE from 'three'
 import gsap from 'gsap'
 import { useExploded } from './ExplodedContext'
-import { waypointCameraState, alquimiaMacroCamOverride } from './CameraRig'
+import { waypointCameraState } from './CameraRig'
 import { applyChunkExplosion } from './utils/ChunkExplode'
 import { applyMagicShockwave } from './utils/MagicShockwave'
 import { audioStore, useAudioStore } from './store/audioStore'
-import AlquimiaGlitchIllusion from './components/AlquimiaGlitchIllusion'
 
 // Helper: get value based on isMobile flag
 const mob = (desktopVal, mobileVal) => audioStore.getState().isMobile ? mobileVal : desktopVal
@@ -34,7 +33,9 @@ const EXPLODE_EAST_PIECE_NAMES = [
   'AlquimiaTriangle',
   'AlquimiaCircleInner',
   'AlquimiaSquare',
-  'AlquimiaTourbillonDome'
+  'AlquimiaTourbillonDome',
+
+
 ]
 const ANIMATED_EAST_PIECE_NAMES = [
   'InnerRingEast',
@@ -167,7 +168,6 @@ const TourbillonAnimations = () => {
     activeSection, setActiveSection,
     hoverTitle, setHoverTitle,
     setExternalLink,
-    isMacroAlquimia, setIsMacroAlquimia,
   } = useExploded()
 
   // Retrieve the cached gltfs
@@ -180,35 +180,6 @@ const TourbillonAnimations = () => {
   const pinEastRef = useRef(null)
   const hotelHerreraLinkRef = useRef(null)
   const isHoveredHotelHerreraLink = useRef(false)
-
-  // Load SVG texture upfront to avoid Suspense render errors on dynamic mount
-  const alquimiaLogoMap = useLoader(THREE.TextureLoader, '/AlquimiaLogo_Appear.svg')
-
-  const alquimiaIllusionConfig = useControls('Alquimia SVG Illusion', {
-    pos: { value: [0.0, 0.0, 1], step: 0.1, label: 'Position' },
-    scale: { value: 1.0, min: 0.1, max: 10, step: 0.1, label: 'Scale' },
-    rot: { value: [0, 0, 0], step: 0.05, label: 'Rotation' }
-  })
-
-
-
-  // ── AlquimiaCircleOuter macro close-up camera — tweak live with Leva ────────────────
-  const {
-    alqMacroPosX, alqMacroPosY, alqMacroPosZ,
-    alqMacroTgtX, alqMacroTgtY, alqMacroTgtZ,
-    alqMacroFov, alqMacroFocusDist, alqMacroFocalLen, alqMacroBokeh
-  } = useControls('Alquimia Macro Cam', {
-    alqMacroPosX: { value: -0.4, step: 0.1, label: 'Pos X' },
-    alqMacroPosY: { value: 5.2, step: 0.1, label: 'Pos Y' },
-    alqMacroPosZ: { value: 8, step: 0.1, label: 'Pos Z' },
-    alqMacroTgtX: { value: 3, step: 0.1, label: 'Target X' },
-    alqMacroTgtY: { value: 6, step: 0.1, label: 'Target Y' },
-    alqMacroTgtZ: { value: 2, step: 0.1, label: 'Target Z' },
-    alqMacroFov: { value: 35, min: 10, max: 120, step: 1, label: 'FoV' },
-    alqMacroFocusDist: { value: 0.5, min: 0.1, max: 100, step: 0.1, label: 'Focus Dist' },
-    alqMacroFocalLen: { value: 80, min: 1, max: 150, step: 1, label: 'Focal Length' },
-    alqMacroBokeh: { value: 6, min: 0, max: 20, step: 0.1, label: 'Bokeh Scale' },
-  }, { collapsed: true })
 
   // Leva controls for SVG Illusion
   const hhLogoRef = useRef(null)
@@ -261,21 +232,8 @@ const TourbillonAnimations = () => {
   const explodedPiecesRef = useRef({})
   const prevExplodedRef = useRef(null)
 
-  // ── AlquimiaCircleOuter: hover state (drives button visibility) + button safety ref ──
+  // ── AlquimiaCircleOuter: hover state ──
   const [alquimiaHovered, setAlquimiaHovered] = useState(false)
-  const isOverMadGemsButton = useRef(false)
-
-  // ── Sync Leva macro-cam values → CameraRig override object every time they change ──
-  useEffect(() => {
-    alquimiaMacroCamOverride.active = isMacroAlquimia
-    alquimiaMacroCamOverride.position = [alqMacroPosX, alqMacroPosY, alqMacroPosZ]
-    alquimiaMacroCamOverride.target = [alqMacroTgtX, alqMacroTgtY, alqMacroTgtZ]
-    alquimiaMacroCamOverride.fov = alqMacroFov
-    alquimiaMacroCamOverride.dof = { focusDistance: alqMacroFocusDist, focalLength: alqMacroFocalLen, bokehScale: alqMacroBokeh }
-  }, [isMacroAlquimia,
-    alqMacroPosX, alqMacroPosY, alqMacroPosZ,
-    alqMacroTgtX, alqMacroTgtY, alqMacroTgtZ,
-    alqMacroFov, alqMacroFocusDist, alqMacroFocalLen, alqMacroBokeh])
 
   // ── Explode / Collapse animation ─────────────────────────────────────────
   // Shockwave hover uniforms
@@ -449,7 +407,7 @@ const TourbillonAnimations = () => {
       if ([
         'PinEast', 'TourbillonEastInnerG4', 'AlquimiaCircleOuter', 'AlquimiaTriangle',
         'AlquimiaCircleInner', 'AlquimiaSquare', 'AlquimiaFlaskGrabber', 'AlquimiaWeight',
-        'Flask', 'AlquimiaFlask', 'AlquimiaGear7', 'AlquimiaGear1', 'AlquimiaInnerCircleGrabber',
+        'Flask', 'AlquimiaFlask', 'AlquimiaGear7', 'AlquimiaGear1', 'AlquimiaGear2', 'AlquimiaInnerCircleGrabber',
         'AlquimiaTourbillonDome'
       ].includes(child.name)) {
         eastHierarchyMapRef.current[child.name] = child
@@ -558,7 +516,8 @@ const TourbillonAnimations = () => {
     reparent('AlquimiaTriangle', 'AlquimiaCircleOuter');
 
     reparent('AlquimiaCircleInner', 'AlquimiaTriangle');
-    reparent('AlquimiaGear1', 'AlquimiaTriangle');
+    reparent('AlquimiaGear1', 'PinEast');
+    reparent('AlquimiaGear2', 'PinEast');
     reparent('AlquimiaInnerCircleGrabber', 'AlquimiaTriangle');
 
     reparent('AlquimiaSquare', 'AlquimiaCircleInner');
@@ -613,9 +572,14 @@ const TourbillonAnimations = () => {
       }
       if (child.name === 'AlquimiaTourbillonDome') {
         domeRef.current = child
+        eastHierarchyMapRef.current['AlquimiaTourbillonDome'] = child
         if (!child.userData.defaultPos) {
           child.userData.defaultPos = child.position.clone()
           child.userData.defaultRot = child.rotation.clone()
+        }
+        const parentObj = eastHierarchyMapRef.current['TourbillonEastInnerG4']
+        if (parentObj && child.parent !== parentObj) {
+          parentObj.attach(child)
         }
       }
     })
@@ -749,7 +713,7 @@ const TourbillonAnimations = () => {
         explicitlyExclude = ['G1002']
       } else if (isExploded === 'east') {
         explicitlyExclude = [
-          'AlquimiaGearsGrabber', 'AlquimiaGear1', 'AlquimiaGear2', 'AlquimiaGear3',
+          'AlquimiaGearsGrabber', 'AlquimiaGear3',
           'AlquimiaGear4', 'AlquimiaGear5', 'AlquimiaGear6', 'Bolt', 'AlquimiaWeight',
           'AlquimiaInnerCircleGrabber', 'AlquimiaFlaskGrabber', 'AlquimiaGear7'
         ]
@@ -824,9 +788,9 @@ const TourbillonAnimations = () => {
             gsap.to(pieces['AlquimiaTourbillonDome'].position, { x: mob(-2.2, 0), y: mob(5, 3), z: mob(5, 2), duration: 3.0, ease: 'power3.out' })
             const targetRot = pieces['AlquimiaTourbillonDome'].userData.worldExplodedRot || pieces['AlquimiaTourbillonDome'].userData.defaultRot
             gsap.to(pieces['AlquimiaTourbillonDome'].rotation, {
-              x: targetRot.x,
-              y: targetRot.y,
-              z: targetRot.z,
+              x: pieces['AlquimiaTourbillonDome'].userData.defaultRot.x + targetRot.x + 3,
+              y: pieces['AlquimiaTourbillonDome'].userData.defaultRot.y + 1,
+              z: pieces['AlquimiaTourbillonDome'].userData.defaultRot.z - 1,
               duration: 3.0, ease: 'power3.out',
             })
           }
@@ -844,8 +808,8 @@ const TourbillonAnimations = () => {
           if (pieces['AlquimiaCircleOuter']) {
             gsap.killTweensOf(pieces['AlquimiaCircleOuter'].rotation)
             gsap.to(pieces['AlquimiaCircleOuter'].rotation, {
-              x: pieces['AlquimiaCircleOuter'].userData.defaultRot.x,
-              y: pieces['AlquimiaCircleOuter'].userData.defaultRot.y + (Math.PI / -2),
+              x: pieces['AlquimiaCircleOuter'].userData.defaultRot.x + (Math.PI / 2),
+              y: pieces['AlquimiaCircleOuter'].userData.defaultRot.y,
               z: pieces['AlquimiaCircleOuter'].userData.defaultRot.z,
               duration: 3.0, ease: 'power3.out',
             })
@@ -1166,10 +1130,7 @@ const TourbillonAnimations = () => {
         })
       isHoveredAlquimia.current = false
       isHoveredInnerRing.current = false
-      isHoveredDome.current = false
       setAlquimiaHovered(false)
-      setIsMacroAlquimia(false)
-      isOverMadGemsButton.current = false
       isHoveredNorthOutter.current = false
       isHoveredNorthInner.current = false
       isHoveredNorthG4.current = false
@@ -1323,7 +1284,7 @@ const TourbillonAnimations = () => {
     }
   }, [isExploded, scene, forceAllProgressTo, setNonExplodedMeshesVisible,
     progressTunnelFloor, progressCrystals, progressDome, progressSystem, progressUnified,
-    setTooltip, setActiveSection, setIsMacroAlquimia])
+    setTooltip, setActiveSection])
 
   // ── Per-frame logic ───────────────────────────────────────────────────────
   const _raycaster = new THREE.Raycaster()
@@ -1486,7 +1447,7 @@ const TourbillonAnimations = () => {
         const alquimiaCollider = alquimiaColliderRef.current
         const alquimiaMesh = explodedPiecesRef.current['AlquimiaCircleOuter']
         if (alquimiaCollider) {
-          const hit = !isMacroAlquimia && _raycaster.intersectObject(alquimiaCollider, false).length > 0
+          const hit = _raycaster.intersectObject(alquimiaCollider, false).length > 0
 
           if (hit && !isHoveredAlquimia.current) {
             isHoveredAlquimia.current = true
@@ -1998,7 +1959,7 @@ const TourbillonAnimations = () => {
 
 
       if (isExploded === 'east') {
-        if (isHoveredAlquimia.current && !isOverMadGemsButton.current) {
+        if (isHoveredAlquimia.current) {
           setExternalLink({ url: 'https://hotelherrera.com/alquimia' })
           return
         }
@@ -2132,17 +2093,6 @@ const TourbillonAnimations = () => {
         )
       })}
 
-      {/* Render the Alquimia glitch SVG illusion attached to AlquimiaCircleOuter */}
-      {isExploded === 'east' && explodedPiecesRef.current['AlquimiaCircleOuter'] && createPortal(
-        <AlquimiaGlitchIllusion
-          map={alquimiaLogoMap}
-          hovered={isHoveredAlquimia.current}
-          pos={alquimiaIllusionConfig.pos}
-          scale={alquimiaIllusionConfig.scale}
-          rot={alquimiaIllusionConfig.rot}
-        />,
-        explodedPiecesRef.current['AlquimiaCircleOuter']
-      )}
     </>
   )
 }

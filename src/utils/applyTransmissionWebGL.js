@@ -10,19 +10,29 @@ export const applyTransmissionWebGL = (material, isMobile = false) => {
 
   material.userData = {
     ...material.userData,
-    uProgress: 0.0,
-    uTime: 0.0,
+    uProgress: material.userData.uProgress !== undefined ? material.userData.uProgress : 0.0,
+    uTime: material.userData.uTime !== undefined ? material.userData.uTime : 0.0,
+    uIor: material.userData.uIor !== undefined ? material.userData.uIor : 1.5,
+    uTh: material.userData.uTh !== undefined ? material.userData.uTh : 2.55,
+    uDisp: material.userData.uDisp !== undefined ? material.userData.uDisp : 1.0,
   };
 
   material.onBeforeCompile = (shader) => {
     shader.uniforms.uProgress = { value: material.userData.uProgress !== undefined ? material.userData.uProgress : 0.0 };
     shader.uniforms.uTime = { value: 0.0 };
+    // Exposed IOR and related uniforms — writable at runtime
+    shader.uniforms.uIor  = { value: material.userData.uIor  ?? 1.15 };
+    shader.uniforms.uTh   = { value: material.userData.uTh   ?? 2.55 };
+    shader.uniforms.uDisp = { value: material.userData.uDisp ?? 1.0  };
     material.userData.shader = shader;
 
     // Inject uniforms
     shader.fragmentShader = `
       uniform float uProgress;
       uniform float uTime;
+      uniform float uIor;
+      uniform float uTh;
+      uniform float uDisp;
       ${shader.fragmentShader}
     `;
 
@@ -37,9 +47,6 @@ export const applyTransmissionWebGL = (material, isMobile = false) => {
         vec3 customN = normalize( vNormal );
         vec3 customV = normalize( vViewPosition );
         
-        float uTh = 2.55;
-        float uIor = 1.15;
-        float uDisp = 1.0;
         float uCaus = 0.0;
         
         vec2 refractionOffset = customN.xy * uTh * (uIor - 1.0) * 0.05;

@@ -15,9 +15,6 @@ export const ExplodedProvider = ({ children }) => {
   // Values: null | 'events' | 'adventures' | 'bookroom' | 'suites'
   const [activeSection, setActiveSection] = useState(null);
 
-  // Whether we're in the AlquimiaCircleOuter macro close-up view (East Exploded)
-  const [isMacroAlquimia, setIsMacroAlquimia] = useState(false);
-
   // Hover title for the main Tourbillons
   const [hoverTitle, setHoverTitle] = useState(null);
 
@@ -61,8 +58,6 @@ export const ExplodedProvider = ({ children }) => {
       setTooltip,
       activeSection,
       setActiveSection,
-      isMacroAlquimia,
-      setIsMacroAlquimia,
       hoverTitle,
       setHoverTitle,
       transitionProgress,       // legacy — kept for compat
