@@ -41,9 +41,9 @@ export const FRICTION = 0.1   // used as Math.pow(FRICTION, delta)
 export const DESKTOP_WAYPOINTS = [
   {
     position: [0, 100, 0.001],
-    target: [0, 0, 0],
+    target: [0, -5, 0],
     fov: 80,
-    dof: { focusDistance: 0.5, focalLength: 10, bokehScale: 10 },
+    dof: { focusDistance: 0.5, focalLength: 1, bokehScale: 0 },
   },
   {
     position: [0, 75, 1],

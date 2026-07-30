@@ -47,7 +47,7 @@ const useLevaControls = () => {
   // ── Directional Light ──────────────────────────────────────────
   const dirLightControls = useControls('Directional Light', {
     enabled: { value: true, label: 'Enabled' },
-    intensity: { value: 4.3, min: 0, max: 50, step: 0.1, label: 'Intensity' },
+    intensity: { value: 2.3, min: 0, max: 50, step: 0.1, label: 'Intensity' },
     color: { value: '#ffeedd', label: 'Color' },
     position: folder({
       x: { value: 0.0, min: -100, max: 100, step: 0.5, label: 'X' },

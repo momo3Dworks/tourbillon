@@ -511,7 +511,7 @@ const TourbillonAnimations = () => {
 
     reparent('TourbillonEastInnerG4', 'PinEast');
     reparent('AlquimiaCircleOuter', 'TourbillonEastInnerG4');
-    reparent('AlquimiaTourbillonDome', 'TourbillonEastInnerG4');
+    reparent('AlquimiaTourbillonDome', 'PinEast');
 
     reparent('AlquimiaTriangle', 'AlquimiaCircleOuter');
 
@@ -655,14 +655,7 @@ const TourbillonAnimations = () => {
         gsap.to(hhLogo.position, {
           x: hhLogoPosRef.current.x,
           y: hhLogoPosRef.current.y + 2.5,
-          z: hhLogoPosRef.current.z + 8,
-          duration: 2.0,
-          ease: 'power3.out',
-        })
-        gsap.to(hhLogo.rotation, {
-          x: hhLogoRotRef.current.x + 1.5,
-          y: hhLogoRotRef.current.y,
-          z: hhLogoRotRef.current.z,
+          z: hhLogoPosRef.current.z + 8.5,
           duration: 2.0,
           ease: 'power3.out',
         })
@@ -1879,6 +1872,25 @@ const TourbillonAnimations = () => {
     }
 
     if (isExploded === 'hotelherrera') {
+      const hhLogoMesh = hhLogoRef.current
+      if (hhLogoMesh) {
+        // Base target rotation in exploded view
+        const baseRotX = hhLogoRotRef.current.x + 1.5
+        const baseRotY = hhLogoRotRef.current.y
+        const baseRotZ = hhLogoRotRef.current.z
+
+        // Parallax target offset (tilt based on mouse cursor)
+        const targetX = baseRotX - state.mouse.y * 0.25
+        const targetY = baseRotY + state.mouse.x * 0.25
+        const targetZ = baseRotZ
+
+        // Smoothly lerp towards target rotation
+        const lerpFactor = 1 - Math.pow(0.001, delta)
+        hhLogoMesh.rotation.x = THREE.MathUtils.lerp(hhLogoMesh.rotation.x, targetX, lerpFactor)
+        hhLogoMesh.rotation.y = THREE.MathUtils.lerp(hhLogoMesh.rotation.y, targetY, lerpFactor)
+        hhLogoMesh.rotation.z = THREE.MathUtils.lerp(hhLogoMesh.rotation.z, targetZ, lerpFactor)
+      }
+
       if (activeModal) {
         if (isHoveredHHLogo.current) {
           isHoveredHHLogo.current = false
@@ -1889,7 +1901,6 @@ const TourbillonAnimations = () => {
       } else {
         _raycaster.setFromCamera(state.mouse, state.camera)
         const hhLogoCollider = hhLogoColliderRef.current
-        const hhLogoMesh = hhLogoRef.current
 
         if (hhLogoCollider && hhLogoMesh) {
           const hit = _raycaster.intersectObject(hhLogoCollider, false).length > 0

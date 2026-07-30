@@ -56,7 +56,7 @@ function App() {
   const [hasStarted, setHasStarted] = useState(false)
   const [isTabVisible, setIsTabVisible] = useState(true)
   // Press H to toggle Leva panel visibility
-  const [levaHidden, setLevaHidden] = useState(false)
+  const [levaHidden, setLevaHidden] = useState(true)
 
   useEffect(() => {
     const onVisibilityChange = () => {
